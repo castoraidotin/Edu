@@ -8,7 +8,10 @@ import { track } from '@vercel/analytics'
 const mockTrack = track as jest.Mock
 
 describe('trackEvent', () => {
-  beforeEach(() => jest.clearAllMocks())
+  beforeEach(() => {
+    jest.clearAllMocks()
+    window.sessionStorage.clear()
+  })
   afterEach(() => {
     delete (window as unknown as { va?: unknown }).va
     delete (window as unknown as { vaq?: unknown }).vaq
@@ -46,4 +49,53 @@ describe('trackEvent', () => {
 
   // Server no-op test lives in analytics-server.test.ts (@jest-environment node),
   // because jsdom's window is non-configurable and cannot be shadowed here.
+
+  // Vercel Web Analytics gates custom events behind a Pro plan, so every
+  // trackEvent() call also beacons the same event to our own Supabase-backed
+  // sink. These tests cover that delivery path independently of track().
+  describe('sendToSupabase (Supabase event sink)', () => {
+    const originalSendBeacon = navigator.sendBeacon
+    const originalFetch = global.fetch
+
+    afterEach(() => {
+      Object.defineProperty(navigator, 'sendBeacon', { value: originalSendBeacon, configurable: true })
+      global.fetch = originalFetch
+    })
+
+    it('beacons the event name and props to /api/analytics/track via sendBeacon', () => {
+      const sendBeacon = jest.fn().mockReturnValue(true)
+      Object.defineProperty(navigator, 'sendBeacon', { value: sendBeacon, configurable: true })
+
+      trackEvent('quiz_completed', { domain: 'ai', score: 8 })
+
+      expect(sendBeacon).toHaveBeenCalledTimes(1)
+      const [url, blob] = sendBeacon.mock.calls[0]
+      expect(url).toBe('/api/analytics/track')
+      expect(blob).toBeInstanceOf(Blob)
+    })
+
+    it('falls back to fetch with keepalive when sendBeacon is unavailable', () => {
+      Object.defineProperty(navigator, 'sendBeacon', { value: undefined, configurable: true })
+      const mockFetch = jest.fn().mockResolvedValue({ ok: true })
+      global.fetch = mockFetch
+
+      trackEvent('domain_selected', { domain: 'cloud' })
+
+      expect(mockFetch).toHaveBeenCalledTimes(1)
+      const [url, init] = mockFetch.mock.calls[0]
+      expect(url).toBe('/api/analytics/track')
+      expect(init.keepalive).toBe(true)
+      const body = JSON.parse(init.body)
+      expect(body.name).toBe('domain_selected')
+      expect(body.props).toEqual({ domain: 'cloud' })
+    })
+
+    it('does not throw when both sendBeacon and fetch are unavailable', () => {
+      Object.defineProperty(navigator, 'sendBeacon', { value: undefined, configurable: true })
+      // @ts-expect-error - simulate fetch missing entirely
+      delete global.fetch
+
+      expect(() => trackEvent('landing_viewed')).not.toThrow()
+    })
+  })
 })

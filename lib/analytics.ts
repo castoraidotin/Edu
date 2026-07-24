@@ -48,6 +48,56 @@ function ensureQueue(): void {
   }
 }
 
+// Vercel Web Analytics gates all custom events behind a Pro plan (Hobby only
+// shows automatic pageviews), so events are also persisted to our own
+// Supabase table via this route. One id per browser tab session, so events
+// from the same visit can be grouped without identifying the person.
+const SESSION_STORAGE_KEY = 'edu:analytics_session'
+
+function getSessionId(): string | undefined {
+  try {
+    const existing = window.sessionStorage.getItem(SESSION_STORAGE_KEY)
+    if (existing) return existing
+    const created = crypto.randomUUID()
+    window.sessionStorage.setItem(SESSION_STORAGE_KEY, created)
+    return created
+  } catch {
+    return undefined
+  }
+}
+
+// Fire-and-forget POST to our own event sink. Uses sendBeacon so the request
+// survives the same-tab navigation a cta_clicked/signup click triggers;
+// fetch's keepalive is the fallback for browsers/environments without it.
+// Every failure mode here is swallowed — a dropped analytics event must never
+// surface as a broken user flow.
+function sendToSupabase(name: FunnelEvent['name'], props?: Record<string, PropValue>): void {
+  try {
+    const payload = JSON.stringify({
+      name,
+      props,
+      session_id: getSessionId(),
+      url: window.location.pathname,
+    })
+
+    if (typeof navigator.sendBeacon === 'function') {
+      const blob = new Blob([payload], { type: 'application/json' })
+      if (navigator.sendBeacon('/api/analytics/track', blob)) return
+    }
+
+    fetch('/api/analytics/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: payload,
+      keepalive: true,
+    }).catch(() => {
+      // ignore — analytics delivery failures are not user-facing
+    })
+  } catch {
+    // ignore — analytics delivery failures are not user-facing
+  }
+}
+
 // Fire a funnel event. `name` is constrained to the events above; `props` is
 // optional so no-prop events (landing_viewed, signup_completed) can be called
 // as trackEvent('landing_viewed').
@@ -60,4 +110,5 @@ export function trackEvent(
   if (typeof window === 'undefined') return
   ensureQueue()
   track(name, props)
+  sendToSupabase(name, props)
 }
