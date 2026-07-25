@@ -100,3 +100,9 @@ Current migrations:
   domain's questions (50 old questions swapped for 65 new ones). This is the
   same kind of DELETE + INSERT pattern that `npm run seed:domain` now
   generates automatically for any domain.
+- `migration-assessment-hardening.sql` — adds `quiz_attempts`, server-side
+  rate limiting, and leaderboard-support functions.
+- `migration-analytics-events.sql` — adds the `analytics_events` table, the
+  storage sink for the app's funnel events (`lib/analytics.ts` →
+  `/api/analytics/track`). Vercel Web Analytics gates custom events behind a
+  Pro plan, so this table is where events are actually queryable.

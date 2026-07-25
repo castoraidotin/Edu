@@ -12,6 +12,7 @@ import ResultsScreen from '@/components/ResultsScreen'
 import type { ClientQuestion, CorrectAnswer, Domain } from '@/lib/types'
 import { ALL_DOMAINS as VALID_DOMAINS, DOMAIN_LABELS } from '@/lib/domains'
 import { antiCheatHandlers } from '@/lib/anti-cheat'
+import { trackEvent } from '@/lib/analytics'
 import {
   PROMO_AD_SLIDE_ENABLED,
   PROMO_BADGE_ENABLED,
@@ -137,6 +138,7 @@ export default function TestPage() {
         // recorded time doesn't include the initial fetch or any auth wait.
         startTimeMsRef.current = Date.now()
         setPhase('quiz')
+        trackEvent('quiz_started', { domain })
       } catch {
         setErrorMessage('Could not load questions. Please try again.')
         setPhase('error')
@@ -172,8 +174,10 @@ export default function TestPage() {
         })
         if (!res.ok) throw new Error('Failed to save results')
         const data = await res.json()
-        setScore(typeof data.score === 'number' ? data.score : 0)
+        const finalScore = typeof data.score === 'number' ? data.score : 0
+        setScore(finalScore)
         setPhase('results')
+        trackEvent('quiz_completed', { domain, score: finalScore })
       } catch {
         setErrorMessage('Could not save results. Please try again.')
         setPhase('error')
@@ -181,6 +185,22 @@ export default function TestPage() {
     },
     [attemptId, domain]
   )
+
+  // Fire result_viewed once each time the results screen appears (including
+  // retakes). The ref makes it fire on the transition into 'results', not on
+  // every re-render while results are shown; it resets when we leave results
+  // so a Try Again retake fires it again.
+  const resultViewedRef = useRef(false)
+  useEffect(() => {
+    if (phase === 'results' && score !== null) {
+      if (!resultViewedRef.current) {
+        resultViewedRef.current = true
+        trackEvent('result_viewed', { domain, score })
+      }
+    } else {
+      resultViewedRef.current = false
+    }
+  }, [phase, score, domain])
 
   function handleTimerExpire() {
     submitTest(answers)

@@ -1,11 +1,11 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { track } from '@vercel/analytics'
 import ScoreGauge from '@/components/ui/ScoreGauge'
 import type { Domain } from '@/lib/types'
 import { DOMAIN_LABELS } from '@/lib/domains'
 import { PROMO_BRAND_NAME } from '@/lib/promo'
+import { trackEvent } from '@/lib/analytics'
 
 interface ResultsScreenProps {
   domain: Domain
@@ -139,7 +139,7 @@ export default function ResultsScreen({ domain, score, onTryAgain }: ResultsScre
               target="_blank"
               rel="noopener noreferrer"
               onClick={() =>
-                track('cta_clicked', { location: 'quiz_results', brand: 'castor', variant: ctaVariant, domain })
+                trackEvent('cta_clicked', { location: 'quiz_results', brand: 'castor', variant: ctaVariant, domain })
               }
               className="inline-flex items-center justify-center gap-2 bg-[var(--action)] text-white rounded-md px-5 py-2.5 text-sm font-semibold whitespace-nowrap hover:bg-[var(--action-hover)] transition-colors flex-shrink-0"
             >
