@@ -37,6 +37,7 @@ describe('GET /api/analytics/summary', () => {
     mockGetAnalyticsSummary.mockResolvedValue({
       windowDays: 30,
       totalEvents: 3,
+      uniqueVisitors: 2,
       countsByEvent: { landing_viewed: 3 },
       countsByDomain: {},
       countsByCtaLocation: {},

@@ -79,14 +79,18 @@ export default async function AdminAnalyticsPage() {
         ) : (
           <>
             <p className="text-[var(--ink-soft)] mb-6">
-              Last {summary.windowDays} days &middot; {summary.totalEvents} events
+              Last {summary.windowDays} days &middot; {summary.uniqueVisitors} unique visitors
+              {' '}({summary.totalEvents} events)
               {summary.averageQuizScore !== null && (
                 <> &middot; avg quiz score {summary.averageQuizScore.toFixed(1)}/10</>
               )}
             </p>
 
             <section className="bg-[var(--surface)] rounded-lg border border-[var(--line)] shadow-sm p-4 mb-6">
-              <h2 className="text-sm font-semibold text-[var(--ink)] mb-3">Funnel</h2>
+              <h2 className="text-sm font-semibold text-[var(--ink)] mb-1">Funnel</h2>
+              <p className="text-xs text-[var(--ink-soft)] mb-3">
+                Unique visitors per step, not raw clicks &mdash; repeats by the same visitor only count once.
+              </p>
               <div className="space-y-2">
                 {EVENT_ORDER.map((name) => (
                   <Bar
@@ -121,7 +125,7 @@ export default async function AdminAnalyticsPage() {
               </section>
 
               <section className="bg-[var(--surface)] rounded-lg border border-[var(--line)] shadow-sm p-4">
-                <h2 className="text-sm font-semibold text-[var(--ink)] mb-3">Castor CTA clicks</h2>
+                <h2 className="text-sm font-semibold text-[var(--ink)] mb-3">Castor CTA (unique clickers)</h2>
                 {Object.keys(summary.countsByCtaLocation).length === 0 ? (
                   <p className="text-sm text-[var(--ink-soft)]">No data yet.</p>
                 ) : (

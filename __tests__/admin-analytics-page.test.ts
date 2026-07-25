@@ -53,6 +53,7 @@ describe('AdminAnalyticsPage — access gate', () => {
     mockGetAnalyticsSummary.mockResolvedValue({
       windowDays: 30,
       totalEvents: 0,
+      uniqueVisitors: 0,
       countsByEvent: {},
       countsByDomain: {},
       countsByCtaLocation: {},
