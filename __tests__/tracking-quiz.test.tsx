@@ -56,7 +56,7 @@ describe('TestPage tracking', () => {
       fireEvent.click(screen.getByRole('button', { name: /Next Question|Submit Test/i }))
     }
 
-    await waitFor(() => expect(screen.getByText('Test Complete!')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('Your benchmark')).toBeInTheDocument())
     expect(mockTrackEvent).toHaveBeenCalledWith('quiz_completed', { domain: 'devops', score: 7 })
     expect(mockTrackEvent).toHaveBeenCalledWith('result_viewed', { domain: 'devops', score: 7 })
   })

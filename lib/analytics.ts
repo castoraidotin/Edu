@@ -21,7 +21,14 @@ export type FunnelEvent =
   | { name: 'quiz_completed'; props: { domain: string; score: number } }
   | { name: 'result_viewed'; props: { domain: string; score: number } }
   | { name: 'stats_viewed'; props: { domain: string } }
-  | { name: 'cta_clicked'; props: { location: string; brand: string } }
+  | {
+      name: 'cta_clicked'
+      // variant/domain are only present on the results-screen surface
+      // (components/ResultsScreen.tsx), which routes to a training vs.
+      // automation destination depending on domain; the older badge/
+      // interstitial/ad-slide surfaces only ever send location + brand.
+      props: { location: string; brand: string; variant?: string; domain?: string }
+    }
 
 // Allowed value types for a Vercel custom-event property.
 type PropValue = string | number | boolean | null
