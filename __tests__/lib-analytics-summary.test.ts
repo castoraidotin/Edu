@@ -137,6 +137,7 @@ describe('getAnalyticsSummary', () => {
     const summary = await getAnalyticsSummary()
     // Same visitor retook the quiz — both real scores must still be averaged.
     expect(summary?.averageQuizScore).toBe(7)
+    expect(summary?.quizCompletionCount).toBe(2)
   })
 
   it('ignores malformed props instead of throwing', async () => {

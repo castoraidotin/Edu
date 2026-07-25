@@ -58,6 +58,7 @@ describe('AdminAnalyticsPage — access gate', () => {
       countsByDomain: {},
       countsByCtaLocation: {},
       averageQuizScore: null,
+      quizCompletionCount: 0,
       recentEvents: [],
     })
     await expect(AdminAnalyticsPage()).resolves.toBeDefined()

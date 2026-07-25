@@ -42,6 +42,7 @@ describe('GET /api/analytics/summary', () => {
       countsByDomain: {},
       countsByCtaLocation: {},
       averageQuizScore: null,
+      quizCompletionCount: 0,
       recentEvents: [],
     })
     const res = await GET()
