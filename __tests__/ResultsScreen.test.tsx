@@ -7,9 +7,12 @@ import type { Domain } from '@/lib/types'
 jest.mock('next/navigation', () => ({
   useRouter: jest.fn(),
 }))
+jest.mock('@vercel/analytics', () => ({ track: jest.fn() }))
 
 import { useRouter } from 'next/navigation'
+import { track } from '@vercel/analytics'
 const mockUseRouter = useRouter as jest.Mock
+const mockTrack = track as jest.Mock
 
 describe('ResultsScreen', () => {
   const push = jest.fn()
@@ -139,6 +142,32 @@ describe('ResultsScreen', () => {
       // utm_content carries variant + domain so results-screen conversions
       // can be split by which domain/CTA drove the click.
       expect(href.searchParams.get('utm_content')).toBe('automation_devops')
+    })
+
+    // Regression: this is the only Castor CTA surface left once the mid-quiz
+    // ad slide/interstitial/badge are disabled (see lib/promo.ts). Before
+    // this test existed, clicking it fired no analytics event at all — CTA
+    // click data would have silently gone to zero the moment this PR shipped.
+    it('fires a cta_clicked analytics event on click, tagged with location, variant, and domain', () => {
+      render(<ResultsScreen domain="devops" score={5} onTryAgain={onTryAgain} />)
+      fireEvent.click(screen.getByTestId('results-castor-cta'))
+      expect(mockTrack).toHaveBeenCalledWith('cta_clicked', {
+        location: 'quiz_results',
+        brand: 'castor',
+        variant: 'automation',
+        domain: 'devops',
+      })
+    })
+
+    it('tags the training variant for a training-routed domain', () => {
+      render(<ResultsScreen domain="ai" score={5} onTryAgain={onTryAgain} />)
+      fireEvent.click(screen.getByTestId('results-castor-cta'))
+      expect(mockTrack).toHaveBeenCalledWith('cta_clicked', {
+        location: 'quiz_results',
+        brand: 'castor',
+        variant: 'training',
+        domain: 'ai',
+      })
     })
   })
 
