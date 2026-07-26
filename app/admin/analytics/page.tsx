@@ -82,7 +82,11 @@ export default async function AdminAnalyticsPage() {
               Last {summary.windowDays} days &middot; {summary.uniqueVisitors} unique visitors
               {' '}({summary.totalEvents} events)
               {summary.averageQuizScore !== null && (
-                <> &middot; avg quiz score {summary.averageQuizScore.toFixed(1)}/10</>
+                <>
+                  {' '}
+                  &middot; avg quiz score {summary.averageQuizScore.toFixed(1)}/10 across{' '}
+                  {summary.quizCompletionCount} completions, all domains combined
+                </>
               )}
             </p>
 
