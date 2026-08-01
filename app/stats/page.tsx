@@ -15,6 +15,13 @@ import { DESIGNATION_OPTIONS, EXPERIENCE_OPTIONS } from '@/lib/profile-options'
 import { crowdFilterParams } from '@/lib/crowd-filter-params'
 import type { PersonalStatsResponse, StatsResponse } from '@/lib/stats-types'
 import { trackEvent } from '@/lib/analytics'
+import { ArrowLeft, SlidersHorizontal } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 const TABS = [
   { id: 'performance', label: 'Community Insights' },
@@ -172,117 +179,104 @@ function StatsContent() {
   const pageTitle = hasSpecificCommunity ? `${communityScope} Benchmark` : 'Community Insights'
 
   return (
-    <main className="min-h-screen bg-[var(--paper)]">
+    <main className="min-h-screen bg-background">
       <AppHeader right={<UserMenu />} />
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-1 text-sm text-[var(--ink-soft)] hover:text-[var(--ink)] transition-colors mb-6"
-        >
-          &larr; Back to Dashboard
-        </Link>
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10">
+        <Button asChild variant="ghost" size="sm" className="-ml-3 mb-6 text-muted-foreground">
+          <Link href="/dashboard"><ArrowLeft /> Back to dashboard</Link>
+        </Button>
 
-        <h1 className="text-2xl font-bold text-[var(--ink)] mb-1">{pageTitle}</h1>
-        <p className="text-[var(--ink-soft)] mb-4">
+        <div className="mb-7">
+          <Badge variant="secondary" className="font-mono text-[10px] uppercase tracking-[0.18em]">Benchmark intelligence</Badge>
+          <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">{pageTitle}</h1>
+          <p className="mt-2 max-w-3xl text-muted-foreground">
           See how many people are taking {DOMAIN_LABELS[domain]}, how they score, and where you stand.
-        </p>
+          </p>
+        </div>
 
         {/* Domain + Designation share a row so the chart doesn't get pushed below the fold */}
-        <div className="flex flex-wrap items-end gap-4 mb-4">
+        <Card className="mb-6 gap-0 py-0 shadow-sm">
+          <CardContent className="flex flex-wrap items-end gap-4 p-4 sm:p-5">
           <div className="w-full sm:flex-1 sm:min-w-[140px] sm:max-w-xs">
-            <label htmlFor="stats-domain" className="block text-sm font-medium text-[var(--ink)] mb-1">
-              Domain
-            </label>
-            <select
+            <Label htmlFor="stats-domain" className="mb-2">Domain</Label>
+            <NativeSelect
               id="stats-domain"
               aria-label="Domain"
               value={domain}
               onChange={(e) => setDomain(e.target.value as Domain)}
-              className="w-full border border-[var(--line)] rounded-lg pl-3 pr-8 py-2 text-sm bg-[var(--surface)]"
             >
               {ALL_DOMAINS.map((d) => (
-                <option key={d} value={d}>
+                <NativeSelectOption key={d} value={d}>
                   {DOMAIN_LABELS[d]}
-                </option>
+                </NativeSelectOption>
               ))}
-            </select>
+            </NativeSelect>
           </div>
 
           <div className="w-full sm:flex-1 sm:min-w-[140px] sm:max-w-xs">
-            <label htmlFor="stats-designation" className="block text-sm font-medium text-[var(--ink)] mb-1">
-              Designation
-            </label>
-            <select
+            <Label htmlFor="stats-designation" className="mb-2">Designation</Label>
+            <NativeSelect
               id="stats-designation"
               aria-label="Designation"
               value={designation}
               onChange={(e) => setDesignation(e.target.value)}
-              className="w-full border border-[var(--line)] rounded-lg pl-3 pr-8 py-2 text-sm bg-[var(--surface)]"
             >
-              <option value="all">All designations</option>
+              <NativeSelectOption value="all">All designations</NativeSelectOption>
               {DESIGNATION_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>
+                <NativeSelectOption key={opt} value={opt}>
                   {opt}
-                </option>
+                </NativeSelectOption>
               ))}
-            </select>
+            </NativeSelect>
           </div>
 
           <div className="w-full sm:flex-1 sm:min-w-[140px] sm:max-w-xs">
-            <label htmlFor="stats-experience" className="block text-sm font-medium text-[var(--ink)] mb-1">
-              Experience
-            </label>
-            <select
+            <Label htmlFor="stats-experience" className="mb-2">Experience</Label>
+            <NativeSelect
               id="stats-experience"
               aria-label="Experience"
               value={experience}
               onChange={(e) => setExperience(e.target.value)}
-              className="w-full border border-[var(--line)] rounded-lg pl-3 pr-8 py-2 text-sm bg-[var(--surface)]"
             >
-              <option value="all">All experience levels</option>
+              <NativeSelectOption value="all">All experience levels</NativeSelectOption>
               {EXPERIENCE_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>
+                <NativeSelectOption key={opt} value={opt}>
                   {opt}
-                </option>
+                </NativeSelectOption>
               ))}
-            </select>
+            </NativeSelect>
           </div>
 
-          <button
+          <Button
+            variant={showMoreFilters ? 'secondary' : 'outline'}
+            size="icon-lg"
             onClick={() => setShowMoreFilters((v) => !v)}
             aria-label={showMoreFilters ? 'Hide filters' : 'More filters'}
             title={showMoreFilters ? 'Hide filters' : 'More filters'}
-            className={`relative flex items-center justify-center w-10 h-10 rounded-lg border transition flex-shrink-0 ${
-              showMoreFilters
-                ? 'border-[var(--action)] bg-[var(--paper)] text-[var(--action)]'
-                : 'border-[var(--line)] bg-[var(--surface)] text-[var(--ink-soft)] hover:border-[var(--action)] hover:text-[var(--action)]'
-            }`}
+            className="relative shrink-0"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="w-5 h-5" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M7 12h10M10 18h4" />
-            </svg>
+            <SlidersHorizontal />
             {!showMoreFilters && activeFilterCount > 0 && (
               <span
                 data-testid="filter-count-badge"
-                className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[var(--action)] text-white text-[10px] font-bold flex items-center justify-center"
+                className="absolute -right-1.5 -top-1.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground"
               >
                 {activeFilterCount}
               </span>
             )}
-          </button>
-        </div>
+          </Button>
+          </CardContent>
+        </Card>
 
         {showMoreFilters && (
-          <div
-            className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4 bg-[var(--surface)] rounded-lg border border-[var(--line)] p-4"
+          <Card
+            className="mb-6 grid grid-cols-1 gap-4 p-4 shadow-sm sm:grid-cols-3"
             data-testid="more-filters"
           >
             <div>
-              <label htmlFor="stats-country" className="block text-sm font-medium text-[var(--ink)] mb-1">
-                Country
-              </label>
-              <select
+              <Label htmlFor="stats-country" className="mb-2">Country</Label>
+              <NativeSelect
                 id="stats-country"
                 aria-label="Country"
                 value={countryCode}
@@ -291,22 +285,19 @@ function StatsContent() {
                   setStateCode('')
                   setCity('')
                 }}
-                className="w-full border border-[var(--line)] rounded-lg pl-3 pr-8 py-2 text-sm bg-[var(--surface)]"
               >
-                <option value="">All countries</option>
+                <NativeSelectOption value="">All countries</NativeSelectOption>
                 {Country.getAllCountries().map((c) => (
-                  <option key={c.isoCode} value={c.isoCode}>
+                  <NativeSelectOption key={c.isoCode} value={c.isoCode}>
                     {c.name}
-                  </option>
+                  </NativeSelectOption>
                 ))}
-              </select>
+              </NativeSelect>
             </div>
 
             <div>
-              <label htmlFor="stats-state" className="block text-sm font-medium text-[var(--ink)] mb-1">
-                State / Region
-              </label>
-              <select
+              <Label htmlFor="stats-state" className="mb-2">State / Region</Label>
+              <NativeSelect
                 id="stats-state"
                 aria-label="State or Region"
                 value={stateCode}
@@ -315,38 +306,34 @@ function StatsContent() {
                   setCity('')
                 }}
                 disabled={!countryCode}
-                className="w-full border border-[var(--line)] rounded-lg pl-3 pr-8 py-2 text-sm bg-[var(--surface)] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <option value="">All states / regions</option>
+                <NativeSelectOption value="">All states / regions</NativeSelectOption>
                 {states.map((s) => (
-                  <option key={s.isoCode} value={s.isoCode}>
+                  <NativeSelectOption key={s.isoCode} value={s.isoCode}>
                     {s.name}
-                  </option>
+                  </NativeSelectOption>
                 ))}
-              </select>
+              </NativeSelect>
             </div>
 
             <div>
-              <label htmlFor="stats-city" className="block text-sm font-medium text-[var(--ink)] mb-1">
-                City
-              </label>
-              <select
+              <Label htmlFor="stats-city" className="mb-2">City</Label>
+              <NativeSelect
                 id="stats-city"
                 aria-label="City"
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
                 disabled={!stateCode}
-                className="w-full border border-[var(--line)] rounded-lg pl-3 pr-8 py-2 text-sm bg-[var(--surface)] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <option value="">All cities</option>
+                <NativeSelectOption value="">All cities</NativeSelectOption>
                 {cities.map((c) => (
-                  <option key={c.name} value={c.name}>
+                  <NativeSelectOption key={c.name} value={c.name}>
                     {c.name}
-                  </option>
+                  </NativeSelectOption>
                 ))}
-              </select>
+              </NativeSelect>
             </div>
-          </div>
+          </Card>
         )}
 
         {/* Tabs — scrolls horizontally on narrow screens instead of overflowing
@@ -354,34 +341,24 @@ function StatsContent() {
             The right-edge mask fades the last tab into transparency instead of
             clipping it mid-word, so it reads as "swipe for more" rather than
             broken text. */}
-        <div
-          className="overflow-x-auto mb-4"
-          style={{
-            maskImage: 'linear-gradient(to right, black calc(100% - 20px), transparent)',
-            WebkitMaskImage: 'linear-gradient(to right, black calc(100% - 20px), transparent)',
-          }}
-        >
-          <div role="tablist" className="flex gap-1 border-b border-[var(--line)] w-max min-w-full">
+        <Tabs value={tab} onValueChange={(value) => setTab(value as Tab)} className="gap-6">
+          <div className="overflow-x-auto border-b">
+          <TabsList variant="line" className="h-11 min-w-max justify-start px-0">
             {TABS.map((t) => (
-              <button
+              <TabsTrigger
                 key={t.id}
-                role="tab"
-                aria-selected={tab === t.id}
+                value={t.id}
                 onClick={() => setTab(t.id)}
-                className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition whitespace-nowrap flex-shrink-0 ${
-                  tab === t.id
-                    ? 'border-[var(--action)] text-[var(--action)]'
-                    : 'border-transparent text-[var(--ink-soft)] hover:text-[var(--ink)]'
-                }`}
+                className="h-11 flex-none px-4 data-[state=active]:text-primary after:bg-[var(--signal)]"
               >
                 {t.label}
-              </button>
+              </TabsTrigger>
             ))}
+          </TabsList>
           </div>
-        </div>
 
         {/* Community Insights */}
-        {tab === 'performance' && (
+        <TabsContent value="performance">
           <CommunityInsights
             domain={domain}
             loading={loading}
@@ -391,10 +368,10 @@ function StatsContent() {
             communityScope={communityScope}
             hasSpecificCommunity={hasSpecificCommunity}
           />
-        )}
+        </TabsContent>
 
         {/* Domain Overview */}
-        {tab === 'overview' && (
+        <TabsContent value="overview">
           <DomainOverview
             designation={designation}
             experience={experience}
@@ -402,13 +379,13 @@ function StatsContent() {
             state_region={stateName || 'all'}
             city={city || 'all'}
           />
-        )}
+        </TabsContent>
 
         {/* Leaderboard */}
-        {tab === 'leaderboard' && (
+        <TabsContent value="leaderboard">
           <div>
-            <p className="text-sm text-[var(--ink-soft)] mb-4">Top scorers in {DOMAIN_LABELS[domain]}</p>
-            <div className="bg-[var(--surface)] rounded-lg border border-[var(--line)] shadow-sm p-4">
+            <p className="mb-4 text-sm text-muted-foreground">Top scorers in {DOMAIN_LABELS[domain]}</p>
+            <Card className="gap-0 py-0 shadow-sm"><CardContent className="p-4">
               <Leaderboard
                 domain={domain}
                 designation={designation}
@@ -417,9 +394,10 @@ function StatsContent() {
                 state_region={stateName || 'all'}
                 city={city || 'all'}
               />
-            </div>
+            </CardContent></Card>
           </div>
-        )}
+        </TabsContent>
+        </Tabs>
       </div>
     </main>
   )
@@ -427,7 +405,7 @@ function StatsContent() {
 
 export default function StatsPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[var(--paper)]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
       <StatsContent />
     </Suspense>
   )

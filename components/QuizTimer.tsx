@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
+import { Badge } from '@/components/ui/badge'
 
 interface QuizTimerProps {
   totalSeconds: number
@@ -43,7 +44,8 @@ export default function QuizTimer({ totalSeconds, onExpire, paused = false }: Qu
   const isUrgent = remaining <= 60
 
   return (
-    <div
+    <Badge
+      variant="outline"
       className={`flex items-center gap-2 px-3 py-1.5 rounded-md border ${
         paused
           ? 'border-amber-300 bg-amber-50'
@@ -61,7 +63,7 @@ export default function QuizTimer({ totalSeconds, onExpire, paused = false }: Qu
       <div
         data-testid="quiz-timer"
         className={`font-mono text-2xl font-bold tabular-nums ${
-          paused ? 'text-amber-600' : isUrgent ? 'text-red-600 animate-pulse' : 'text-gray-700'
+          paused ? 'text-amber-600' : isUrgent ? 'text-red-600 animate-pulse' : 'text-gray-700 dark:text-gray-300'
         }`}
       >
         {display}
@@ -74,6 +76,6 @@ export default function QuizTimer({ totalSeconds, onExpire, paused = false }: Qu
           Paused
         </span>
       )}
-    </div>
+    </Badge>
   )
 }

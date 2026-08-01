@@ -3,20 +3,24 @@
 import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { ArrowRight, Link as LinkIcon, MapPin, ShieldCheck } from 'lucide-react'
 import { Country, State, City } from 'country-state-city'
+import Logo from '@/components/Logo'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
+import { Progress } from '@/components/ui/progress'
+import { Separator } from '@/components/ui/separator'
 import { DESIGNATION_OPTIONS, EXPERIENCE_OPTIONS } from '@/lib/profile-options'
 
-// Name + Email are always pre-filled from auth (2 of 5 trackable fields)
 const BASE_PROGRESS = 40
-
-const inputClass =
-  'w-full border border-[var(--line)] rounded-md px-3 py-2 text-sm text-[var(--ink)] bg-[var(--surface)] focus:outline-none focus:ring-1 focus:ring-[var(--action)] focus:border-[var(--action)] disabled:opacity-50 disabled:cursor-not-allowed'
-const labelClass = 'block text-sm font-medium text-[var(--ink)] mb-1'
 
 export default function CompleteProfilePage() {
   const { data: session } = useSession()
   const router = useRouter()
-
   const [country, setCountry] = useState('')
   const [stateRegion, setStateRegion] = useState('')
   const [city, setCity] = useState('')
@@ -26,16 +30,13 @@ export default function CompleteProfilePage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const locationFilled = country.length > 0 && stateRegion.length > 0 && city.length > 0
-  const experienceFilled = experience.length > 0
+  const locationFilled = Boolean(country && stateRegion && city)
+  const experienceFilled = Boolean(experience)
   const designationFilled = designation.trim().length > 0
   const linkedinFilled = linkedin.trim().length > 0
-
-  // Progress: name + email = 40%, each required field adds 20%
   const requiredFilled = [locationFilled, experienceFilled, designationFilled].filter(Boolean).length
   const progress = BASE_PROGRESS + requiredFilled * 20
   const allRequiredFilled = requiredFilled === 3
-
   const checklist = [
     { label: 'Name', done: true },
     { label: 'Email', done: true },
@@ -44,7 +45,6 @@ export default function CompleteProfilePage() {
     { label: 'Designation', done: designationFilled },
     { label: 'LinkedIn', done: linkedinFilled, optional: true },
   ]
-
   const states = State.getStatesOfCountry(country)
   const cities = City.getCitiesOfState(country, stateRegion)
 
@@ -73,199 +73,85 @@ export default function CompleteProfilePage() {
       setLoading(false)
       return
     }
-
     router.push('/dashboard')
   }
 
   return (
-    <div className="min-h-screen bg-[var(--paper)] flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-2xl">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-[var(--ink)]">Complete your profile</h1>
-          <p className="text-[var(--ink-soft)] text-sm mt-1">
-            {session?.user?.email}
-          </p>
-        </div>
-
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Checklist + progress */}
-          <div className="lg:w-56 flex-shrink-0">
-            <div className="bg-[var(--surface)] rounded-lg border border-[var(--line)] p-5">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-semibold text-[var(--ink)]">Profile</span>
-                <span
-                  data-testid="progress-percent"
-                  className="font-mono text-sm font-bold text-[var(--action)]"
-                >
-                  {progress}%
-                </span>
+    <main className="min-h-screen bg-background">
+      <header className="border-b bg-card"><div className="mx-auto flex h-16 max-w-6xl items-center px-4 sm:px-6"><Logo /></div></header>
+      <div className="mx-auto grid max-w-5xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:py-14">
+        <aside>
+          <div className="mb-6">
+            <Badge variant="secondary" className="font-mono text-[10px] uppercase tracking-widest">One last step</Badge>
+            <h1 className="mt-4 text-3xl font-bold tracking-tight">Complete your profile</h1>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">A little context makes every benchmark more useful and more relevant to your career.</p>
+          </div>
+          <Card className="gap-0 py-0 lg:sticky lg:top-8">
+            <CardHeader className="border-b p-5">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm">Profile readiness</CardTitle>
+                <span data-testid="progress-percent" className="font-mono text-sm font-bold text-[var(--signal)]">{progress}%</span>
               </div>
-
-              {/* Progress bar */}
-              <div className="h-1.5 bg-[var(--paper)] rounded-full mb-4 overflow-hidden">
-                <div
-                  data-testid="progress-bar"
-                  className="h-1.5 bg-[var(--signal)] rounded-full transition-all duration-300"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-
-              {/* Checklist */}
-              <ul className="space-y-2">
+              <Progress data-testid="progress-bar" value={progress} className="mt-2 h-1.5 bg-muted [&_[data-slot=progress-indicator]]:bg-[var(--signal)]" />
+            </CardHeader>
+            <CardContent className="p-5">
+              <ul className="space-y-3">
                 {checklist.map(({ label, done, optional }) => (
-                  <li key={label} className="flex items-center gap-2 text-sm">
-                    <span
-                      data-testid={`check-${label.toLowerCase()}`}
-                      className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
-                        done
-                          ? 'bg-green-100 text-green-600'
-                          : optional
-                          ? 'bg-[var(--paper)] text-[var(--ink-soft)]'
-                          : 'bg-red-50 text-red-400'
-                      }`}
-                    >
+                  <li key={label} className="flex items-center gap-3 text-sm">
+                    <span data-testid={`check-${label.toLowerCase()}`} className={`flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${done ? 'bg-emerald-100 text-emerald-700' : optional ? 'bg-muted text-muted-foreground' : 'bg-destructive/8 text-destructive'}`}>
                       {done ? '✓' : optional ? '○' : '✗'}
                     </span>
-                    <span className={done ? 'text-[var(--ink)]' : 'text-[var(--ink-soft)]'}>
-                      {label}
-                      {optional && (
-                        <span className="text-[var(--ink-soft)] text-xs ml-1">(opt)</span>
-                      )}
-                    </span>
+                    <span className={done ? 'font-medium text-foreground' : 'text-muted-foreground'}>{label}{optional && <span className="ml-1 text-xs">(optional)</span>}</span>
                   </li>
                 ))}
               </ul>
-            </div>
-          </div>
+              <Separator className="my-5" />
+              <div className="flex gap-2.5 text-xs leading-relaxed text-muted-foreground"><ShieldCheck className="mt-0.5 size-4 shrink-0 text-[var(--signal)]" /><span>Your details are used only for private, aggregated comparisons.</span></div>
+            </CardContent>
+          </Card>
+        </aside>
 
-          {/* Form */}
-          <div className="flex-1">
-            <form
-              onSubmit={handleSubmit}
-              className="bg-[var(--surface)] rounded-lg border border-[var(--line)] p-6 space-y-5"
-            >
-              {/* Country */}
-              <div>
-                <label className={labelClass}>Country</label>
-                <select
-                  value={country}
-                  onChange={(e) => { setCountry(e.target.value); setStateRegion(''); setCity('') }}
-                  aria-label="Country"
-                  className={inputClass}
-                >
-                  <option value="">Select country</option>
-                  {Country.getAllCountries().map((c) => (
-                    <option key={c.isoCode} value={c.isoCode}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* State / Region */}
-              <div>
-                <label className={labelClass}>State / Region</label>
-                <select
-                  value={stateRegion}
-                  onChange={(e) => { setStateRegion(e.target.value); setCity('') }}
-                  disabled={!country}
-                  aria-label="State or Region"
-                  className={inputClass}
-                >
-                  <option value="">Select state / region</option>
-                  {states.map((s) => (
-                    <option key={s.isoCode} value={s.isoCode}>{s.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* City */}
-              <div>
-                <label className={labelClass}>City</label>
-                <select
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  disabled={!stateRegion}
-                  aria-label="City"
-                  className={inputClass}
-                >
-                  <option value="">Select city</option>
-                  {cities.map((c) => (
-                    <option key={c.name} value={c.name}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Years of experience */}
-              <div>
-                <label className="block text-sm font-medium text-[var(--ink)] mb-2">
-                  Years of Experience
-                </label>
-                <div className="space-y-2">
-                  {EXPERIENCE_OPTIONS.map((opt) => (
-                    <label
-                      key={opt}
-                      className="flex items-center gap-3 cursor-pointer group"
-                    >
-                      <input
-                        type="radio"
-                        name="experience"
-                        value={opt}
-                        checked={experience === opt}
-                        onChange={() => setExperience(opt)}
-                        className="accent-[var(--action)] w-4 h-4"
-                      />
-                      <span className="text-sm text-[var(--ink)] group-hover:text-[var(--action)] transition-colors">
-                        {opt}
-                      </span>
-                    </label>
-                  ))}
+        <Card className="gap-0 overflow-hidden py-0 shadow-sm">
+          <CardHeader className="border-b bg-muted/35 px-6 py-5">
+            <CardTitle className="text-base">Professional context</CardTitle>
+            <CardDescription>Required fields are marked by the progress checklist{session?.user?.email ? ` · ${session.user.email}` : ''}.</CardDescription>
+          </CardHeader>
+          <CardContent className="p-6 sm:p-7">
+            <form onSubmit={handleSubmit} className="space-y-7">
+              <section className="space-y-4">
+                <div className="flex items-center gap-2"><MapPin className="size-4 text-[var(--signal)]" /><h2 className="text-sm font-semibold">Location</h2></div>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="space-y-2"><Label htmlFor="complete-country">Country</Label><NativeSelect id="complete-country" aria-label="Country" value={country} onChange={(e) => { setCountry(e.target.value); setStateRegion(''); setCity('') }}><NativeSelectOption value="">Select country</NativeSelectOption>{Country.getAllCountries().map((item) => <NativeSelectOption key={item.isoCode} value={item.isoCode}>{item.name}</NativeSelectOption>)}</NativeSelect></div>
+                  <div className="space-y-2"><Label htmlFor="complete-state">State / Region</Label><NativeSelect id="complete-state" aria-label="State or Region" value={stateRegion} disabled={!country} onChange={(e) => { setStateRegion(e.target.value); setCity('') }}><NativeSelectOption value="">Select state / region</NativeSelectOption>{states.map((item) => <NativeSelectOption key={item.isoCode} value={item.isoCode}>{item.name}</NativeSelectOption>)}</NativeSelect></div>
+                  <div className="space-y-2"><Label htmlFor="complete-city">City</Label><NativeSelect id="complete-city" aria-label="City" value={city} disabled={!stateRegion} onChange={(e) => setCity(e.target.value)}><NativeSelectOption value="">Select city</NativeSelectOption>{cities.map((item) => <NativeSelectOption key={item.name} value={item.name}>{item.name}</NativeSelectOption>)}</NativeSelect></div>
                 </div>
-              </div>
+              </section>
 
-              {/* Designation */}
-              <div>
-                <label className={labelClass}>Designation</label>
-                <select
-                  value={designation}
-                  onChange={(e) => setDesignation(e.target.value)}
-                  aria-label="Designation"
-                  className={inputClass}
-                >
-                  <option value="">Select designation</option>
-                  {DESIGNATION_OPTIONS.map((opt) => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
-                </select>
-              </div>
+              <Separator />
 
-              {/* LinkedIn */}
-              <div>
-                <label className={labelClass}>
-                  LinkedIn Profile{' '}
-                  <span className="text-[var(--ink-soft)] font-normal">(Optional)</span>
-                </label>
-                <input
-                  type="url"
-                  value={linkedin}
-                  onChange={(e) => setLinkedin(e.target.value)}
-                  placeholder="https://linkedin.com/in/yourname"
-                  className={inputClass}
-                />
-              </div>
+              <section className="space-y-4">
+                <Label>Years of Experience</Label>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {EXPERIENCE_OPTIONS.map((option) => {
+                    const id = `complete-experience-${option.replace(/\W+/g, '-').toLowerCase()}`
+                    return <Label key={option} htmlFor={id} className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 font-normal transition-colors hover:bg-accent/60 ${experience === option ? 'border-[var(--signal)] bg-accent/60' : ''}`}><input id={id} type="radio" name="experience" value={option} checked={experience === option} onChange={() => setExperience(option)} aria-label={option} className="size-4 accent-[var(--signal)]" />{option}</Label>
+                  })}
+                </div>
+              </section>
 
-              {error && <p className="text-red-500 text-sm">{error}</p>}
+              <div className="space-y-2"><Label htmlFor="complete-designation">Designation</Label><NativeSelect id="complete-designation" aria-label="Designation" value={designation} onChange={(e) => setDesignation(e.target.value)}><NativeSelectOption value="">Select designation</NativeSelectOption>{DESIGNATION_OPTIONS.map((option) => <NativeSelectOption key={option} value={option}>{option}</NativeSelectOption>)}</NativeSelect></div>
 
-              <button
-                type="submit"
-                disabled={!allRequiredFilled || loading}
-                className="w-full bg-[var(--action)] text-white rounded-md px-4 py-3 font-medium hover:bg-[var(--action-hover)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {loading ? 'Saving...' : 'Continue →'}
-              </button>
+              <div className="space-y-2"><Label htmlFor="complete-linkedin">LinkedIn Profile <span className="font-normal text-muted-foreground">(optional)</span></Label><div className="relative"><LinkIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input id="complete-linkedin" type="url" value={linkedin} onChange={(e) => setLinkedin(e.target.value)} placeholder="https://linkedin.com/in/yourname" className="pl-9" /></div></div>
+
+              {error && <p role="alert" className="rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">{error}</p>}
+
+              <Button type="submit" disabled={!allRequiredFilled || loading} size="lg" className="w-full">
+                {loading ? 'Saving...' : <>Continue <ArrowRight /></>}
+              </Button>
             </form>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    </main>
   )
 }

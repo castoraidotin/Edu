@@ -5,6 +5,9 @@ import type { Domain } from '@/lib/types'
 import { ALL_DOMAINS, DOMAIN_LABELS_SHORT as DOMAIN_LABELS } from '@/lib/domains'
 import { crowdFilterParams } from '@/lib/crowd-filter-params'
 import ScoreGauge from '@/components/ui/ScoreGauge'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface OverviewResponse {
   averageScoreByDomain: Partial<Record<Domain, number | null>>
@@ -48,7 +51,7 @@ export default function DomainOverview({ designation, experience, country, state
   }, [designation, experience, country, state_region, city])
 
   if (error) return <p className="text-red-600 text-sm">{error}</p>
-  if (!data) return <p className="text-[var(--ink-soft)] text-sm animate-pulse">Loading domain averages…</p>
+  if (!data) return <div className="relative flex flex-wrap gap-4"><span className="sr-only">Loading domain averages…</span><Skeleton className="h-36 min-w-[220px] flex-1" /><Skeleton className="h-36 min-w-[220px] flex-1" /><Skeleton className="h-36 min-w-[220px] flex-1" /></div>
 
   return (
     // Flex-wrap (not a fixed-column grid) so five domain cards never leave a
@@ -61,16 +64,17 @@ export default function DomainOverview({ designation, experience, country, state
         const isMostAttempted = data.mostAttemptedDomain === d
 
         return (
-          <div key={d} className="min-w-[220px] flex-1 bg-[var(--surface)] rounded-lg border border-[var(--line)] p-4">
+          <Card key={d} className="min-w-[220px] flex-1 gap-0 py-0 shadow-sm transition-shadow hover:shadow-md"><CardContent className="p-5">
             <div className="flex items-center justify-between gap-2 mb-2">
               <p className="text-xs font-medium text-[var(--ink-soft)] uppercase tracking-wide">{DOMAIN_LABELS[d]}</p>
               {isMostAttempted && (
-                <span
-                  className="text-[10px] font-semibold text-[var(--action)] bg-[var(--paper)] px-2 py-0.5 rounded-full flex-shrink-0"
+                <Badge
+                  variant="secondary"
+                  className="shrink-0 text-[10px]"
                   data-testid="most-attempted-badge"
                 >
                   Most attempted
-                </span>
+                </Badge>
               )}
             </div>
             <p className="font-mono text-2xl font-bold text-[var(--ink)]">
@@ -85,7 +89,7 @@ export default function DomainOverview({ designation, experience, country, state
             <p className="text-xs text-[var(--ink-soft)] mt-2">
               {count} test-taker{count === 1 ? '' : 's'}
             </p>
-          </div>
+          </CardContent></Card>
         )
       })}
     </div>

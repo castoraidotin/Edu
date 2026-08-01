@@ -21,6 +21,12 @@ import {
   pickAdSlideTriggerIndex,
   pickInterstitialTriggerIndex,
 } from '@/lib/promo'
+import { ArrowLeft, ArrowRight, Send } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Progress } from '@/components/ui/progress'
+import { Skeleton } from '@/components/ui/skeleton'
 
 const TOTAL_SECONDS = 300 // 5 minutes
 
@@ -272,8 +278,8 @@ export default function TestPage() {
   // Auth loading or redirecting
   if (status === 'loading' || status === 'unauthenticated') {
     return (
-      <main className="min-h-screen bg-[var(--paper)] flex items-center justify-center">
-        <p className="text-[var(--ink-soft)] text-lg animate-pulse">Loading…</p>
+      <main className="flex min-h-screen items-center justify-center bg-background">
+        <div className="w-full max-w-md space-y-4 px-4"><Skeleton className="mx-auto h-5 w-32" /><Skeleton className="h-48 w-full" /></div>
       </main>
     )
   }
@@ -281,8 +287,8 @@ export default function TestPage() {
   // Loading questions
   if (phase === 'loading') {
     return (
-      <main className="min-h-screen bg-[var(--paper)] flex items-center justify-center">
-        <p className="text-[var(--ink-soft)] text-lg animate-pulse">Loading questions…</p>
+      <main className="flex min-h-screen items-center justify-center bg-background">
+        <div className="w-full max-w-md space-y-4 px-4"><Skeleton className="mx-auto h-5 w-40" /><Skeleton className="h-48 w-full" /></div>
       </main>
     )
   }
@@ -290,16 +296,15 @@ export default function TestPage() {
   // Error
   if (phase === 'error') {
     return (
-      <main className="min-h-screen bg-[var(--paper)] flex items-center justify-center px-4">
-        <div className="text-center">
-          <p className="text-red-600 font-medium mb-4">{errorMessage}</p>
-          <button
+      <main className="flex min-h-screen items-center justify-center bg-background px-4">
+        <Card className="w-full max-w-md text-center"><CardContent className="p-6">
+          <p className="mb-5 font-medium text-destructive">{errorMessage}</p>
+          <Button
             onClick={() => router.push('/dashboard')}
-            className="bg-[var(--action)] text-white px-6 py-2 rounded-md hover:bg-[var(--action-hover)] transition-colors"
           >
-            Back to Dashboard
-          </button>
-        </div>
+            <ArrowLeft /> Back to dashboard
+          </Button>
+        </CardContent></Card>
       </main>
     )
   }
@@ -312,25 +317,25 @@ export default function TestPage() {
   // Submitting
   if (phase === 'submitting') {
     return (
-      <main className="min-h-screen bg-[var(--paper)] flex items-center justify-center">
-        <p className="text-[var(--ink-soft)] text-lg animate-pulse">Submitting your answers…</p>
+      <main className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-center"><div className="mx-auto mb-4 size-8 animate-spin rounded-full border-2 border-muted border-t-[var(--signal)]" /><p className="text-sm font-medium text-muted-foreground">Submitting your answers…</p></div>
       </main>
     )
   }
 
   // Quiz
   return (
-    <main className="min-h-screen bg-[var(--paper)]" {...antiCheatHandlers}>
+    <main className="min-h-screen bg-background" {...antiCheatHandlers}>
       {/* Header bar */}
-      <div className="sticky top-0 z-10 bg-[var(--surface)] border-b border-[var(--line)]">
-        <div className="px-4 py-3 flex items-center justify-between">
+      <div className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-[var(--ink)] hidden sm:inline">
+            <span className="hidden text-sm font-semibold sm:inline">
               {DOMAIN_LABELS[domain]}
             </span>
-            <span className="font-mono text-sm text-[var(--ink-soft)]">
+            <Badge variant="secondary" className="font-mono text-xs">
               {currentIndex + 1} / {questions.length}
-            </span>
+            </Badge>
           </div>
           <QuizTimer
             totalSeconds={TOTAL_SECONDS}
@@ -348,27 +353,23 @@ export default function TestPage() {
       {showInterstitial && <PromoInterstitial onContinue={handleInterstitialContinue} />}
 
       {/* Progress bar */}
-      <div className="h-1 bg-[var(--line)]">
-        <div
-          className="h-1 bg-[var(--action)] transition-all duration-300"
-          style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
-        />
-      </div>
+      <Progress value={((currentIndex + 1) / questions.length) * 100} className="h-1 rounded-none bg-border [&_[data-slot=progress-indicator]]:bg-[var(--signal)]" />
 
       {/* Question card — lighter padding on phones so option text has more
           room to breathe before it wraps; unchanged from sm: up. */}
-      <div className="max-w-2xl mx-auto px-4 py-6 sm:py-10">
-        <div className="bg-[var(--surface)] rounded-xl border border-[var(--line)] p-5 sm:p-8 min-h-[560px] flex flex-col">
+      <div className="mx-auto max-w-2xl px-4 py-6 sm:py-10">
+        <Card className="min-h-[560px] gap-0 py-0 shadow-sm"><CardContent className="flex min-h-[560px] flex-col p-5 sm:p-8">
           {showAdSlide ? (
             <>
               <PromoAdSlide />
               <div className="mt-8 flex justify-end">
-                <button
+                <Button
+                  size="lg"
                   onClick={handleSkipAd}
-                  className="w-full sm:w-auto bg-[var(--action)] text-white px-8 py-3 rounded-lg font-medium hover:bg-[var(--action-hover)] transition-colors"
+                  className="w-full sm:w-auto"
                 >
                   {PROMO_SKIP_AD_LABEL}
-                </button>
+                </Button>
               </div>
             </>
           ) : (
@@ -384,17 +385,18 @@ export default function TestPage() {
               )}
 
               <div className="mt-8 flex justify-end">
-                <button
+                <Button
+                  size="lg"
                   onClick={handleNext}
                   disabled={!selectedAnswer}
-                  className="w-full sm:w-auto bg-[var(--action)] text-white px-8 py-3 rounded-lg font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[var(--action-hover)] transition-colors"
+                  className="w-full sm:w-auto"
                 >
-                  {isLastQuestion ? 'Submit Test' : 'Next Question'}
-                </button>
+                  {isLastQuestion ? <><Send /> Submit test</> : <>Next question <ArrowRight /></>}
+                </Button>
               </div>
             </>
           )}
-        </div>
+        </CardContent></Card>
       </div>
     </main>
   )

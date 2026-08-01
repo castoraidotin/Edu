@@ -24,7 +24,7 @@ export default async function Home() {
   if (session) redirect('/dashboard')
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--paper)]">
+    <div className="landing-light min-h-screen flex flex-col bg-[var(--paper)]">
       <PageViewTracker event="landing_viewed" />
       {/* Nav — scrolls away as the hero card takes over, unchanged from before */}
       <header className="px-4 sm:px-8 py-4 bg-[var(--surface)] border-b border-[var(--line)] flex items-center justify-between">

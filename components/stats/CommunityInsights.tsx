@@ -9,6 +9,9 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   BarChart, Bar, Cell, PieChart, Pie
 } from 'recharts'
+import { Card, CardContent } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 function domainLabel(domain: string) {
   return DOMAIN_LABELS_SHORT[domain as Domain] ?? domain
@@ -80,20 +83,22 @@ function Tile({
   children: ReactNode
 }) {
   return (
-    <div
+    <Card
       // w-full/h-full matter here: Tile's parent is a flex wrapper (for the
       // md:col-span-N grid pattern), and a flex container's main axis (width)
       // does not auto-stretch children the way the cross axis (height) does.
       // Without an explicit w-full, a tile shrinks to its own content width
       // and leaves the rest of its grid column as blank space.
-      className={`relative min-w-0 w-full h-full overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]/90 backdrop-blur-xl p-5 shadow-sm hover:shadow-lg transition-all duration-500 flex flex-col group ${className}`}
+      className={`group relative h-full w-full min-w-0 gap-0 overflow-hidden py-0 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md ${className}`}
       data-testid={testId}
     >
       <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-      {title && <h3 className="mb-1 text-[15px] font-bold leading-tight text-[var(--ink)] tracking-tight">{title}</h3>}
-      {note && <p className="mb-4 text-[12px] leading-relaxed text-[var(--ink-soft)]/90">{note}</p>}
-      <div className="min-w-0 flex-1 flex flex-col relative z-10">{children}</div>
-    </div>
+      <CardContent className="relative z-10 flex min-w-0 flex-1 flex-col p-5">
+        {title && <h3 className="mb-1 text-[15px] font-bold leading-tight tracking-tight text-foreground">{title}</h3>}
+        {note && <p className="mb-4 text-[12px] leading-relaxed text-muted-foreground">{note}</p>}
+        <div className="flex min-w-0 flex-1 flex-col">{children}</div>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -131,22 +136,22 @@ function HeroRow({ stats }: { stats: StatsResponse; personal: PersonalStatsRespo
       data-testid="hero-row"
     >
       <Tile className="min-w-[140px] flex-1 group">
-        <p className="text-[10.5px] font-bold uppercase tracking-widest text-slate-500">Tests taken</p>
+        <p className="text-[10.5px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Tests taken</p>
         <p className="mt-3 font-mono text-4xl font-extrabold text-indigo-600 tracking-tighter drop-shadow-sm group-hover:scale-105 transition-transform duration-300 origin-left">{testsTaken}</p>
       </Tile>
       <Tile className="min-w-[140px] flex-1 group">
-        <p className="text-[10.5px] font-bold uppercase tracking-widest text-slate-500">Average score</p>
+        <p className="text-[10.5px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Average score</p>
         <p className="mt-3 font-mono text-4xl font-extrabold text-indigo-600 tracking-tighter drop-shadow-sm group-hover:scale-105 transition-transform duration-300 origin-left">{averageScore ?? '—'}</p>
       </Tile>
       <Tile className="min-w-[140px] flex-1 group">
-        <p className="text-[10.5px] font-bold uppercase tracking-widest text-slate-500">Best score</p>
+        <p className="text-[10.5px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Best score</p>
         <p className="mt-3 font-mono text-4xl font-extrabold text-indigo-600 tracking-tighter drop-shadow-sm group-hover:scale-105 transition-transform duration-300 origin-left">
           {bestScore ?? '—'}
           {bestScore !== null && <span className="text-lg font-bold text-indigo-400 ml-1">/10</span>}
         </p>
       </Tile>
       <Tile className="min-w-[140px] flex-1 group">
-        <p className="text-[10.5px] font-bold uppercase tracking-widest text-slate-500">Percentile</p>
+        <p className="text-[10.5px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Percentile</p>
         <p className="mt-3 font-mono text-4xl font-extrabold text-indigo-600 tracking-tighter drop-shadow-sm group-hover:scale-105 transition-transform duration-300 origin-left">
           {stats.percentile !== null ? (
             <>
@@ -159,11 +164,11 @@ function HeroRow({ stats }: { stats: StatsResponse; personal: PersonalStatsRespo
         </p>
       </Tile>
       <Tile testId="score-change-tile" className="min-w-[140px] flex-1 group">
-        <p className="text-[10.5px] font-bold uppercase tracking-widest text-slate-500">Score change</p>
+        <p className="text-[10.5px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Score change</p>
         {scoreChange === null ? (
-          <p className="mt-3 font-mono text-4xl font-extrabold text-slate-400 tracking-tighter drop-shadow-sm">—</p>
+          <p className="mt-3 font-mono text-4xl font-extrabold text-slate-400 dark:text-slate-500 tracking-tighter drop-shadow-sm">—</p>
         ) : (
-          <p className={`mt-3 font-mono text-4xl font-extrabold tracking-tighter drop-shadow-sm group-hover:scale-105 transition-transform duration-300 origin-left ${scoreChange > 0 ? 'text-emerald-600' : scoreChange < 0 ? 'text-rose-600' : 'text-slate-600'}`}>
+          <p className={`mt-3 font-mono text-4xl font-extrabold tracking-tighter drop-shadow-sm group-hover:scale-105 transition-transform duration-300 origin-left ${scoreChange > 0 ? 'text-emerald-600' : scoreChange < 0 ? 'text-rose-600' : 'text-slate-600 dark:text-slate-300'}`}>
             {scoreChange > 0 ? `+${scoreChange.toFixed(1)}` : scoreChange.toFixed(1)}
           </p>
         )}
@@ -261,7 +266,7 @@ function ScoreDistributionTile({ stats }: { stats: StatsResponse }) {
             />
             <Bar dataKey="count" radius={[4, 4, 0, 0]}>
               {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.isYou ? '#4f46e5' : '#e0e7ff'} className="transition-all duration-300 hover:opacity-80" />
+                <Cell key={`cell-${index}`} fill={entry.isYou ? '#4f46e5' : 'var(--signal-soft)'} className="transition-all duration-300 hover:opacity-80" />
               ))}
             </Bar>
           </BarChart>
@@ -366,7 +371,7 @@ function DomainsCoveredTile({ personal }: { personal: PersonalStatsResponse }) {
           </ResponsiveContainer>
           <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center font-mono text-[32px] font-extrabold tabular-nums text-indigo-600 drop-shadow-sm">
             {attempted}
-            <span className="text-[12px] font-semibold text-slate-400 -mt-2">out of {total}</span>
+            <span className="text-[12px] font-semibold text-slate-400 dark:text-slate-500 -mt-2">out of {total}</span>
           </span>
         </div>
         <div className="w-full">
@@ -377,7 +382,7 @@ function DomainsCoveredTile({ personal }: { personal: PersonalStatsResponse }) {
                 <span
                   key={d}
                   className={`rounded-lg px-2 py-1 text-[10px] font-bold tracking-wide uppercase transition-colors ${
-                    on ? 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-400'
+                    on ? 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-400 dark:bg-white/10 dark:text-slate-500'
                   }`}
                 >
                   {radarLabel(d)}
@@ -486,7 +491,7 @@ function PaceVsAccuracyTile({ personal }: { personal: PersonalStatsResponse }) {
       testId="pace-vs-accuracy-tile"
       className="w-full h-full"
     >
-      <div className="mb-6 flex flex-wrap gap-x-6 gap-y-2 text-[11px] text-[var(--ink-soft)] bg-white/40 p-3.5 rounded-xl border border-[var(--line)]/50">
+      <div className="mb-6 flex flex-wrap gap-x-6 gap-y-2 text-[11px] text-[var(--ink-soft)] bg-white/40 dark:bg-white/[0.04] p-3.5 rounded-xl border border-[var(--line)]/50">
         <span className="flex flex-col">
           <span className="text-[9.5px] uppercase tracking-wider font-bold opacity-70">Avg time</span>
           <b className="font-mono text-[16px] text-indigo-600">{formatDuration(avgTime)}</b>
@@ -519,7 +524,7 @@ function PaceVsAccuracyTile({ personal }: { personal: PersonalStatsResponse }) {
                 {p.score}
                 <span className="text-[10px] font-medium opacity-50">/10</span>
               </span>
-              <div className="relative h-4 overflow-hidden rounded-full bg-slate-100 shadow-inner">
+              <div className="relative h-4 overflow-hidden rounded-full bg-slate-100 dark:bg-white/10 shadow-inner">
                 <div
                   className={`h-full rounded-full bg-gradient-to-r shadow-sm transition-all duration-1000 ${
                     high ? 'from-[#3d68e8] to-[#1d3fae]' : mid ? 'from-[#8aa4f2] to-[#3d68e8]' : 'from-[#c7d6fb] to-[#8aa4f2]'
@@ -533,7 +538,7 @@ function PaceVsAccuracyTile({ personal }: { personal: PersonalStatsResponse }) {
                   title={`Your avg: ${formatDuration(avgTime)}`}
                 />
               </div>
-              <span className="text-right font-mono text-[12px] font-semibold tabular-nums text-slate-500">
+              <span className="text-right font-mono text-[12px] font-semibold tabular-nums text-slate-500 dark:text-slate-400">
                 {formatDuration(p.timeTakenSeconds)}
               </span>
             </div>
@@ -559,7 +564,7 @@ function ConsistencyBandTile({ personal }: { personal: PersonalStatsResponse }) 
       testId="consistency-band-tile"
       className="flex-1 flex flex-col h-full w-full"
     >
-      <div className="mb-6 flex items-center justify-center gap-8 text-[10.5px] text-[var(--ink-soft)] font-medium uppercase tracking-widest bg-white/40 p-3 rounded-xl">
+      <div className="mb-6 flex items-center justify-center gap-8 text-[10.5px] text-[var(--ink-soft)] font-medium uppercase tracking-widest bg-white/40 dark:bg-white/[0.04] p-3 rounded-xl">
         <span className="inline-flex items-center gap-2">
           <span className="inline-block h-2 w-10 rounded-full bg-indigo-500 opacity-30" />
           min → max
@@ -575,12 +580,12 @@ function ConsistencyBandTile({ personal }: { personal: PersonalStatsResponse }) 
             return (
               <div key={domain} className="group">
                 <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
-                  <span className="text-[13px] font-bold text-slate-400 uppercase tracking-wide" title={domainLabel(domain)}>
+                  <span className="text-[13px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide" title={domainLabel(domain)}>
                     {domainLabel(domain)}
                   </span>
-                  <span className="text-[10.5px] font-medium text-slate-500 uppercase tracking-wider">Not attempted yet</span>
+                  <span className="text-[10.5px] font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Not attempted yet</span>
                 </div>
-                <div className="relative h-4 w-full rounded-full bg-slate-100 shadow-inner" />
+                <div className="relative h-4 w-full rounded-full bg-slate-100 dark:bg-white/10 shadow-inner" />
               </div>
             )
           }
@@ -600,7 +605,7 @@ function ConsistencyBandTile({ personal }: { personal: PersonalStatsResponse }) 
                   {r.count} attempt{r.count === 1 ? '' : 's'}
                 </span>
               </div>
-              <div className="relative h-4 w-full rounded-full bg-slate-100 shadow-inner">
+              <div className="relative h-4 w-full rounded-full bg-slate-100 dark:bg-white/10 shadow-inner">
                 <div
                   className="absolute inset-y-0 rounded-full bg-gradient-to-r from-indigo-400 to-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.3)] opacity-40 transition-all duration-1000"
                   style={{
@@ -614,7 +619,7 @@ function ConsistencyBandTile({ personal }: { personal: PersonalStatsResponse }) 
                   title={`Average ${r.mean}`}
                 />
               </div>
-              <div className="mt-2 grid grid-cols-3 font-mono text-[11px] font-semibold tabular-nums text-slate-500">
+              <div className="mt-2 grid grid-cols-3 font-mono text-[11px] font-semibold tabular-nums text-slate-500 dark:text-slate-400">
                 <span>
                   Low <b className="text-[var(--ink)]">{r.min}</b>
                 </span>
@@ -645,29 +650,29 @@ function RecentAttemptsTile({ personal }: { personal: PersonalStatsResponse }) {
 
   return (
     <Tile title="Recent attempts" testId="recent-attempts-tile" className="flex-1 w-full">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse mt-2">
-          <thead>
-            <tr className="border-b-2 border-[var(--line)]">
-              <th className="py-2 pr-2 text-[9px] font-bold uppercase tracking-widest text-[var(--ink-soft)] w-[40%]">Domain</th>
-              <th className="py-2 pr-2 text-[9px] font-bold uppercase tracking-widest text-[var(--ink-soft)] text-center w-[20%]">Score</th>
-              <th className="py-2 pr-2 text-[9px] font-bold uppercase tracking-widest text-[var(--ink-soft)] text-center w-[20%]">Date</th>
-              <th className="py-2 text-[9px] font-bold uppercase tracking-widest text-[var(--ink-soft)] text-right w-[20%]">vs. last</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[var(--line)]/50">
+      <div>
+        <Table className="mt-2 text-left">
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-[40%] px-0 pr-2 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Domain</TableHead>
+              <TableHead className="w-[20%] px-0 pr-2 text-center text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Score</TableHead>
+              <TableHead className="w-[20%] px-0 pr-2 text-center text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Date</TableHead>
+              <TableHead className="w-[20%] px-0 text-right text-[9px] font-bold uppercase tracking-widest text-muted-foreground">vs. last</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {attempts.map((a, i) => (
-              <tr key={i} className="hover:bg-slate-50 transition-colors group">
-                <td className="py-2.5 pr-2 text-[12px] font-semibold text-[var(--ink)]">
+              <TableRow key={i}>
+                <TableCell className="px-0 py-2.5 pr-2 text-[12px] font-semibold">
                   {domainLabel(a.domain)}
-                </td>
-                <td className="py-2.5 pr-2 text-center font-mono font-extrabold text-[13px] text-slate-800">
+                </TableCell>
+                <TableCell className="px-0 py-2.5 pr-2 text-center font-mono text-[13px] font-extrabold">
                   {a.score}
-                </td>
-                <td className="py-2.5 pr-2 text-center font-mono text-[10px] font-medium text-slate-500">
+                </TableCell>
+                <TableCell className="px-0 py-2.5 pr-2 text-center font-mono text-[10px] font-medium text-muted-foreground">
                   {formatDate(a.completedAt)}
-                </td>
-                <td className={`py-2.5 text-right font-mono font-bold text-[12px] ${changeClass(a.scoreChangeFromPrevious)}`}>
+                </TableCell>
+                <TableCell className={`px-0 py-2.5 text-right font-mono text-[12px] font-bold ${changeClass(a.scoreChangeFromPrevious)}`}>
                   {a.scoreChangeFromPrevious !== null ? (
                     <span className="flex items-center justify-end gap-1">
                       {a.scoreChangeFromPrevious > 0 && <span className="text-[10px]">▲</span>}
@@ -678,11 +683,11 @@ function RecentAttemptsTile({ personal }: { personal: PersonalStatsResponse }) {
                   ) : (
                     <span className="opacity-50">—</span>
                   )}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </Tile>
   )
@@ -934,12 +939,12 @@ function LocationComparisonTile({ stats }: { stats: StatsResponse }) {
           return (
             <div key={item.scope} className="grid grid-cols-[5.5rem_1fr_2.5rem_2.5rem] items-center gap-3 group">
               <div className="min-w-0 flex flex-col">
-                <p className="truncate text-[12px] font-bold text-slate-800" title={item.label}>
+                <p className="truncate text-[12px] font-bold text-slate-800 dark:text-slate-200" title={item.label}>
                   {item.label}
                 </p>
                 <p className="text-[9px] uppercase tracking-widest font-semibold text-indigo-500/70">{item.scope}</p>
               </div>
-              <div className="relative h-2.5 overflow-hidden rounded-full bg-slate-100 shadow-inner">
+              <div className="relative h-2.5 overflow-hidden rounded-full bg-slate-100 dark:bg-white/10 shadow-inner">
                 {avg !== null && (
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-blue-400 to-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)] transition-all duration-1000"
@@ -1117,20 +1122,20 @@ function TopGroupTrack({ title, items }: { title: string; items: StatsResponse['
   return (
     <div>
       <h4 className="mb-3 text-[10.5px] font-semibold uppercase tracking-wide text-[var(--ink-soft)]">{title}</h4>
-      <table className="w-full text-[13.5px]">
-        <tbody className="divide-y divide-[var(--line)]">
+      <Table className="text-[13.5px]">
+        <TableBody>
           {items.map((item) => (
-            <tr
+            <TableRow
               key={item.label}
               className={item.isYou ? 'font-bold text-[var(--signal)]' : ''}
             >
-              <td className="w-5 py-3 pr-3 font-mono text-[var(--ink-soft)]">{item.rank}</td>
-              <td className="truncate py-3 pr-4">{item.label}</td>
-              <td className="py-3 text-right font-mono">{item.averageScore ?? item.count}</td>
-            </tr>
+              <TableCell className="w-5 px-0 py-3 pr-3 font-mono text-muted-foreground">{item.rank}</TableCell>
+              <TableCell className="truncate px-0 py-3 pr-4">{item.label}</TableCell>
+              <TableCell className="px-0 py-3 text-right font-mono">{item.averageScore ?? item.count}</TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   )
 }
@@ -1179,7 +1184,7 @@ export default function CommunityInsights({
   hasSpecificCommunity,
 }: CommunityInsightsProps) {
   if (loading) {
-    return <p className="animate-pulse text-sm text-[var(--ink-soft)]">Loading your stats…</p>
+    return <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><Skeleton className="h-32" /><Skeleton className="h-32" /><Skeleton className="h-32" /><Skeleton className="h-32" /></div>
   }
 
   if (error) {

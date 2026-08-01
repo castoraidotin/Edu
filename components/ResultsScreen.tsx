@@ -6,6 +6,9 @@ import type { Domain } from '@/lib/types'
 import { DOMAIN_LABELS } from '@/lib/domains'
 import { PROMO_BRAND_NAME } from '@/lib/promo'
 import { trackEvent } from '@/lib/analytics'
+import { RotateCcw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 
 interface ResultsScreenProps {
   domain: Domain
@@ -88,12 +91,12 @@ export default function ResultsScreen({ domain, score, onTryAgain }: ResultsScre
   const ctaUrl = buildCtaUrl(domain, ctaVariant)
 
   return (
-    <main className="min-h-screen bg-[var(--paper)] flex items-start sm:items-center justify-center px-4 py-8 sm:py-12">
+    <main className="flex min-h-screen items-start justify-center bg-background px-4 py-8 sm:items-center sm:py-12">
       <div className="w-full max-w-xl space-y-4">
         {/* Unified score + CTA card — the Castor pitch lives inside the same
             card as the score so it reads as "here's your result, here's the
             natural next step" instead of a separate ad block below the score. */}
-        <div className="bg-[var(--surface)] rounded-xl border border-[var(--line)] shadow-xl overflow-hidden">
+        <Card className="gap-0 overflow-hidden py-0 shadow-xl shadow-slate-900/10">
           {/* Score section */}
           <div className="p-6 sm:p-10 text-center">
             <p className="font-mono text-xs uppercase tracking-widest text-[var(--ink-soft)] mb-1">
@@ -133,6 +136,7 @@ export default function ResultsScreen({ domain, score, onTryAgain }: ResultsScre
                 <p className="text-sm text-[var(--ink)] leading-snug">{ctaPitch}</p>
               </div>
             </div>
+            <Button asChild className="shrink-0">
             <a
               data-testid="results-castor-cta"
               href={ctaUrl}
@@ -141,29 +145,33 @@ export default function ResultsScreen({ domain, score, onTryAgain }: ResultsScre
               onClick={() =>
                 trackEvent('cta_clicked', { location: 'quiz_results', brand: 'castor', variant: ctaVariant, domain })
               }
-              className="inline-flex items-center justify-center gap-2 bg-[var(--action)] text-white rounded-md px-5 py-2.5 text-sm font-semibold whitespace-nowrap hover:bg-[var(--action-hover)] transition-colors flex-shrink-0"
             >
               {ctaButton}
               <span aria-hidden="true">→</span>
             </a>
+            </Button>
           </div>
-        </div>
+        </Card>
 
         {/* Secondary actions — outlined, de-emphasized against the primary
             CTA above. */}
         <div className="flex flex-col sm:flex-row gap-3">
-          <button
+          <Button
+            variant="outline"
+            size="lg"
             onClick={onTryAgain}
-            className="flex-1 border border-[var(--line)] bg-[var(--surface)] rounded-md py-3 text-sm text-[var(--ink)] font-medium hover:border-[var(--ink)] transition-colors"
+            className="flex-1"
           >
-            Try again
-          </button>
-          <button
+            <RotateCcw /> Try again
+          </Button>
+          <Button
+            variant="outline"
+            size="lg"
             onClick={() => router.push('/dashboard')}
-            className="flex-1 border border-[var(--line)] bg-[var(--surface)] rounded-md py-3 text-sm text-[var(--ink)] font-medium hover:border-[var(--ink)] transition-colors"
+            className="flex-1"
           >
             Dashboard
-          </button>
+          </Button>
         </div>
       </div>
     </main>

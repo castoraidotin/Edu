@@ -53,6 +53,21 @@ describe('UserMenu', () => {
     expect(screen.getByRole('button', { name: /sign out/i })).toBeInTheDocument()
   })
 
+  it('shows Castor AI as the organization', () => {
+    render(<UserMenu />)
+    fireEvent.click(screen.getByRole('button', { name: /user menu/i }))
+    expect(screen.getByText('Castor AI')).toBeInTheDocument()
+    expect(screen.getByText('Organization')).toBeInTheDocument()
+  })
+
+  it('shows the two Castor AI service workspaces', () => {
+    render(<UserMenu />)
+    fireEvent.click(screen.getByRole('button', { name: /user menu/i }))
+    fireEvent.click(screen.getByText('Castor AI'))
+    expect(screen.getByRole('menuitem', { name: /AI Workforce Training/i })).toHaveAttribute('href', 'https://www.castorai.in/contact')
+    expect(screen.getByRole('menuitem', { name: /Software Solutions/i })).toHaveAttribute('href', 'https://www.castorai.in/contact')
+  })
+
   it('navigates to /profile when Profile is clicked', () => {
     render(<UserMenu />)
     fireEvent.click(screen.getByRole('button', { name: /user menu/i }))
