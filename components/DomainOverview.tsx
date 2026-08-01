@@ -57,15 +57,18 @@ export default function DomainOverview({ designation, experience, country, state
     // Flex-wrap (not a fixed-column grid) so five domain cards never leave a
     // ragged, half-empty trailing row — whatever doesn't fit on a line grows
     // to fill it evenly, at every viewport width.
-    <div data-testid="domain-overview" className="flex flex-wrap gap-4">
+    <div
+      data-testid="domain-overview"
+      className="grid grid-cols-[repeat(auto-fit,minmax(min(220px,100%),1fr))] gap-4"
+    >
       {ALL_DOMAINS.map((d) => {
         const avg = data.averageScoreByDomain[d]
         const count = data.attemptCounts[d] ?? 0
         const isMostAttempted = data.mostAttemptedDomain === d
 
         return (
-          <Card key={d} className="min-w-[220px] flex-1 gap-0 py-0 shadow-sm transition-shadow hover:shadow-md"><CardContent className="p-5">
-            <div className="flex items-center justify-between gap-2 mb-2">
+          <Card key={d} className="min-w-0 gap-0 py-0 shadow-sm transition-shadow hover:shadow-md"><CardContent className="p-5">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
               <p className="text-xs font-medium text-[var(--ink-soft)] uppercase tracking-wide">{DOMAIN_LABELS[d]}</p>
               {isMostAttempted && (
                 <Badge

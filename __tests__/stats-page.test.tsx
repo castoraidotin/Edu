@@ -180,13 +180,15 @@ describe('StatsPage', () => {
       expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('state_region=Telangana'))
       expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('city=Hyderabad'))
     })
-    expect(screen.getByRole('heading', { name: 'Hyderabad Benchmark' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Community insights' })).toBeInTheDocument()
+    expect(screen.getAllByText('Hyderabad, Telangana, India').length).toBeGreaterThan(0)
   })
 
-  it('defaults to the Community Insights tab with Domain, Designation and Experience visible', async () => {
+  it('defaults to the Community Insights tab and exposes the comparison controls from Filters', async () => {
     installFetchMock()
     render(<StatsPage />)
     expect(screen.getByRole('tab', { name: 'Community Insights' })).toHaveAttribute('aria-selected', 'true')
+    openMoreFilters()
     expect(screen.getByLabelText('Domain')).toBeInTheDocument()
     expect(screen.getByLabelText('Designation')).toBeInTheDocument()
     expect(screen.getByLabelText('Experience')).toBeInTheDocument()
@@ -201,10 +203,11 @@ describe('StatsPage', () => {
     await waitForCommunityInsights()
   })
 
-  it('shows a link back to the dashboard', async () => {
+  it('uses the workspace header instead of a duplicate back link', async () => {
     installFetchMock()
     render(<StatsPage />)
-    expect(screen.getByRole('link', { name: /back to dashboard/i })).toHaveAttribute('href', '/dashboard')
+    expect(screen.getByRole('heading', { name: 'Community insights' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /back to dashboard/i })).not.toBeInTheDocument()
     await waitForCommunityInsights()
   })
 
@@ -229,12 +232,12 @@ describe('StatsPage', () => {
     expect(screen.getByLabelText('City')).toBeDisabled()
   })
 
-  it('shows the hero row and the "You, over time" / "Where you stand" chapters once data is loaded', async () => {
+  it('shows the hero row, score trend, and community benchmark once data is loaded', async () => {
     installFetchMock()
     render(<StatsPage />)
     await waitForCommunityInsights()
     expect(screen.getByTestId('hero-row')).toBeInTheDocument()
-    expect(screen.getByText('You, over time')).toBeInTheDocument()
+    expect(screen.getByText('Score trend')).toBeInTheDocument()
     expect(screen.getByText('Where you stand')).toBeInTheDocument()
   })
 
@@ -322,6 +325,7 @@ describe('StatsPage', () => {
     installFetchMock()
     render(<StatsPage />)
     await waitFor(() => expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('domain=ai')))
+    openMoreFilters()
     fireEvent.change(screen.getByLabelText('Domain'), { target: { value: 'cybersecurity' } })
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('domain=cybersecurity'))
@@ -333,6 +337,7 @@ describe('StatsPage', () => {
     installFetchMock()
     render(<StatsPage />)
     await waitFor(() => expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('domain=ai')))
+    openMoreFilters()
     fireEvent.change(screen.getByLabelText('Designation'), { target: { value: 'Data Scientist' } })
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('designation=Data+Scientist'))
@@ -344,6 +349,7 @@ describe('StatsPage', () => {
     installFetchMock()
     render(<StatsPage />)
     await waitFor(() => expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('domain=ai')))
+    openMoreFilters()
     fireEvent.change(screen.getByLabelText('Experience'), { target: { value: '5-10 years' } })
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('experience=5-10+years'))
@@ -376,7 +382,7 @@ describe('StatsPage', () => {
     await waitFor(() => expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('domain=ai')))
     openMoreFilters()
     fireEvent.change(screen.getByLabelText('Country'), { target: { value: 'IN' } })
-    fireEvent.click(screen.getByRole('button', { name: /hide filters/i }))
+    fireEvent.click(screen.getByRole('button', { name: /view comparison/i }))
     expect(screen.getByRole('button', { name: /more filters/i })).toBeInTheDocument()
     expect(screen.getByTestId('filter-count-badge')).toHaveTextContent('1')
     await flushMicrotasks()
@@ -421,28 +427,30 @@ describe('StatsPage', () => {
     expect(screen.queryByTestId('community-insights')).not.toBeInTheDocument()
   })
 
-  it('keeps Designation, Experience and More filters visible on the Domain Overview tab', async () => {
+  it('keeps the comparison filters available on the Domain Overview tab', async () => {
     installFetchMock()
     render(<StatsPage />)
     await waitForCommunityInsights()
 
     fireEvent.click(screen.getByRole('tab', { name: 'Domain Overview' }))
     await waitFor(() => expect(screen.getByTestId('domain-overview')).toBeInTheDocument())
+    expect(screen.getByRole('button', { name: /more filters/i })).toBeInTheDocument()
+    openMoreFilters()
     expect(screen.getByLabelText('Designation')).toBeInTheDocument()
     expect(screen.getByLabelText('Experience')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /more filters/i })).toBeInTheDocument()
   })
 
-  it('keeps Designation, Experience and More filters visible on the Leaderboard tab', async () => {
+  it('keeps the comparison filters available on the Leaderboard tab', async () => {
     installFetchMock()
     render(<StatsPage />)
     await waitForCommunityInsights()
 
     fireEvent.click(screen.getByRole('tab', { name: 'Leaderboard' }))
     await waitFor(() => expect(screen.getByText(/Top scorers in/)).toBeInTheDocument())
+    expect(screen.getByRole('button', { name: /more filters/i })).toBeInTheDocument()
+    openMoreFilters()
     expect(screen.getByLabelText('Designation')).toBeInTheDocument()
     expect(screen.getByLabelText('Experience')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /more filters/i })).toBeInTheDocument()
   })
 
   it('passes the selected crowd filters through to the Domain Overview request', async () => {
@@ -450,8 +458,10 @@ describe('StatsPage', () => {
     render(<StatsPage />)
     await waitForCommunityInsights()
 
+    openMoreFilters()
     fireEvent.change(screen.getByLabelText('Designation'), { target: { value: 'Data Scientist' } })
     fireEvent.change(screen.getByLabelText('Experience'), { target: { value: '5-10 years' } })
+    fireEvent.click(screen.getByRole('button', { name: /view comparison/i }))
     fireEvent.click(screen.getByRole('tab', { name: 'Domain Overview' }))
 
     await waitFor(() => {
@@ -470,7 +480,9 @@ describe('StatsPage', () => {
     render(<StatsPage />)
     await waitForCommunityInsights()
 
+    openMoreFilters()
     fireEvent.change(screen.getByLabelText('Designation'), { target: { value: 'Data Scientist' } })
+    fireEvent.click(screen.getByRole('button', { name: /view comparison/i }))
     fireEvent.click(screen.getByRole('tab', { name: 'Leaderboard' }))
 
     await waitFor(() => {

@@ -59,48 +59,44 @@ export default function SignupPage() {
 
   return (
     <AuthShell
-      eyebrow="Get your benchmark"
       title="Create Account"
-      description="Start with a five-minute assessment and turn the result into a clear learning path."
+      description="Sign up to start your assessment"
       footer={<>Already have an account?{' '}<Link href="/login" className="font-semibold text-foreground underline-offset-4 hover:underline">Sign in</Link></>}
     >
-      <Button type="button" variant="outline" size="lg" onClick={handleGoogleSignup} className="w-full">
+      <Button type="button" variant="outline" size="lg" onClick={handleGoogleSignup} className="h-12 w-full bg-white hover:bg-white/80">
         <GoogleIcon />
         Continue with Google
       </Button>
 
-      <div className="my-6 flex items-center gap-3">
+      <div className="my-6 flex items-center gap-4">
         <Separator className="flex-1" />
-        <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">or use email</span>
+        <span className="text-xs font-medium uppercase text-muted-foreground">or</span>
         <Separator className="flex-1" />
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="grid grid-cols-2 gap-3">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="signup-first-name">First name</Label>
-            <Input id="signup-first-name" value={firstName} onChange={(e) => setFirstName(e.target.value)} required autoComplete="given-name" placeholder="John" />
+            <Label htmlFor="signup-first-name">First Name</Label>
+            <Input id="signup-first-name" value={firstName} onChange={(e) => setFirstName(e.target.value)} required autoComplete="given-name" placeholder="John" className="h-10 bg-white" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="signup-last-name">Last name</Label>
-            <Input id="signup-last-name" value={lastName} onChange={(e) => setLastName(e.target.value)} required autoComplete="family-name" placeholder="Doe" />
+            <Label htmlFor="signup-last-name">Last Name</Label>
+            <Input id="signup-last-name" value={lastName} onChange={(e) => setLastName(e.target.value)} required autoComplete="family-name" placeholder="Doe" className="h-10 bg-white" />
           </div>
         </div>
         <div className="space-y-2">
           <Label htmlFor="signup-email">Email</Label>
-          <Input id="signup-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" placeholder="you@example.com" />
+          <Input id="signup-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" placeholder="you@example.com" className="h-10 bg-white" />
         </div>
         <div className="space-y-2">
-          <div className="flex items-center justify-between gap-4">
-            <Label htmlFor="signup-password">Password</Label>
-            <span className="text-xs text-muted-foreground">Minimum 8 characters</span>
-          </div>
-          <Input id="signup-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} autoComplete="new-password" placeholder="Min. 8 characters" />
+          <Label htmlFor="signup-password">Password</Label>
+          <Input id="signup-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} autoComplete="new-password" placeholder="Min. 8 characters" className="h-10 bg-white" />
         </div>
 
         {error && <p role="alert" className="rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">{error}</p>}
 
-        <Button type="submit" disabled={loading} size="lg" className="w-full">
+        <Button type="submit" disabled={loading} size="lg" className="h-12 w-full">
           {loading ? 'Creating account...' : 'Create Account'}
         </Button>
       </form>

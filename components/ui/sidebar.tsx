@@ -32,6 +32,8 @@ const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
 
+let sidebarOpenPreference: boolean | undefined
+
 type SidebarContextProps = {
   state: "expanded" | "collapsed"
   open: boolean
@@ -71,7 +73,7 @@ function SidebarProvider({
 
   // This is the internal state of the sidebar.
   // We use openProp and setOpenProp for control from outside the component.
-  const [_open, _setOpen] = React.useState(defaultOpen)
+  const [_open, _setOpen] = React.useState(() => sidebarOpenPreference ?? defaultOpen)
   const open = openProp ?? _open
   const setOpen = React.useCallback(
     (value: boolean | ((value: boolean) => boolean)) => {
@@ -79,6 +81,7 @@ function SidebarProvider({
       if (setOpenProp) {
         setOpenProp(openState)
       } else {
+        sidebarOpenPreference = openState
         _setOpen(openState)
       }
 

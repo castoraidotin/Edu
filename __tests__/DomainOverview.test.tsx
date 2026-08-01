@@ -28,6 +28,10 @@ describe('DomainOverview', () => {
     })
     render(<DomainOverview {...noFilters} />)
     await waitFor(() => expect(screen.getByTestId('domain-overview')).toBeInTheDocument())
+    const overview = screen.getByTestId('domain-overview')
+    expect(overview).toHaveClass('grid')
+    expect(overview).not.toHaveClass('flex')
+    expect(Array.from(overview.children).every((card) => !card.classList.contains('flex-1'))).toBe(true)
     expect(screen.getByText('7.5')).toBeInTheDocument()
     expect(screen.getByText('—')).toBeInTheDocument() // cybersecurity has no data yet
   })

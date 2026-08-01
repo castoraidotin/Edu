@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { ArrowRight, Link as LinkIcon, MapPin, ShieldCheck } from 'lucide-react'
 import { Country, State, City } from 'country-state-city'
-import Logo from '@/components/Logo'
+import AppHeader from '@/components/AppHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -17,13 +17,16 @@ import { Separator } from '@/components/ui/separator'
 import { DESIGNATION_OPTIONS, EXPERIENCE_OPTIONS } from '@/lib/profile-options'
 
 const BASE_PROGRESS = 40
+const INDIA_COUNTRY_CODE = 'IN'
 
 export default function CompleteProfilePage() {
   const { data: session } = useSession()
   const router = useRouter()
-  const [country, setCountry] = useState('')
+  const country = INDIA_COUNTRY_CODE
   const [stateRegion, setStateRegion] = useState('')
   const [city, setCity] = useState('')
+  const [locationVerified, setLocationVerified] = useState(false)
+  const [checkingLocation, setCheckingLocation] = useState(false)
   const [experience, setExperience] = useState('')
   const [designation, setDesignation] = useState('')
   const [linkedin, setLinkedin] = useState('')
@@ -47,6 +50,33 @@ export default function CompleteProfilePage() {
   ]
   const states = State.getStatesOfCountry(country)
   const cities = City.getCitiesOfState(country, stateRegion)
+
+  async function handleLocationCheck(e: React.FormEvent) {
+    e.preventDefault()
+    if (!stateRegion || !city) return
+    setCheckingLocation(true)
+    setError('')
+
+    const res = await fetch('/api/profile/location', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        state_region: State.getStateByCodeAndCountry(stateRegion, country)?.name ?? stateRegion,
+        city,
+      }),
+    })
+    const data = await res.json()
+    setCheckingLocation(false)
+    if (!res.ok) {
+      setError(data.error || 'Could not check availability')
+      return
+    }
+    if (!data.available) {
+      router.push('/coming-soon')
+      return
+    }
+    setLocationVerified(true)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -76,9 +106,59 @@ export default function CompleteProfilePage() {
     router.push('/dashboard')
   }
 
+  if (!locationVerified) {
+    return (
+      <main className="min-h-screen bg-background">
+        <AppHeader />
+        <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-2xl items-center px-4 py-12 sm:px-6">
+          <div className="w-full">
+            <div className="mx-auto mb-8 max-w-lg text-center">
+              <Badge className="border-emerald-200 bg-emerald-100 font-mono text-[10px] font-semibold uppercase tracking-widest text-emerald-700 shadow-none hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                Early access
+              </Badge>
+              <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Check your location</h1>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">Enter only your state and city. We&apos;ll ask for professional details after confirming availability.</p>
+            </div>
+
+            <Card className="gap-0 overflow-hidden py-0 shadow-sm">
+              <CardHeader className="border-b bg-muted/30 px-6 py-5">
+                <div className="flex items-center gap-2"><MapPin className="size-4 text-[var(--signal)]" /><CardTitle className="text-base">Your location</CardTitle></div>
+                <CardDescription>This takes less than a minute.</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6">
+                <form onSubmit={handleLocationCheck} className="space-y-5">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="complete-state">State / Region</Label>
+                      <NativeSelect id="complete-state" aria-label="State or Region" value={stateRegion} onChange={(e) => { setStateRegion(e.target.value); setCity('') }}>
+                        <NativeSelectOption value="">Select state / region</NativeSelectOption>
+                        {states.map((item) => <NativeSelectOption key={item.isoCode} value={item.isoCode}>{item.name}</NativeSelectOption>)}
+                      </NativeSelect>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="complete-city">City</Label>
+                      <NativeSelect id="complete-city" aria-label="City" value={city} disabled={!stateRegion} onChange={(e) => setCity(e.target.value)}>
+                        <NativeSelectOption value="">Select city</NativeSelectOption>
+                        {cities.map((item) => <NativeSelectOption key={item.name} value={item.name}>{item.name}</NativeSelectOption>)}
+                      </NativeSelect>
+                    </div>
+                  </div>
+                  {error && <p role="alert" className="rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">{error}</p>}
+                  <Button type="submit" size="lg" className="w-full" disabled={!stateRegion || !city || checkingLocation}>
+                    {checkingLocation ? 'Checking...' : <>Check availability <ArrowRight /></>}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
   return (
     <main className="min-h-screen bg-background">
-      <header className="border-b bg-card"><div className="mx-auto flex h-16 max-w-6xl items-center px-4 sm:px-6"><Logo /></div></header>
+      <AppHeader />
       <div className="mx-auto grid max-w-5xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:py-14">
         <aside>
           <div className="mb-6">
@@ -118,17 +198,6 @@ export default function CompleteProfilePage() {
           </CardHeader>
           <CardContent className="p-6 sm:p-7">
             <form onSubmit={handleSubmit} className="space-y-7">
-              <section className="space-y-4">
-                <div className="flex items-center gap-2"><MapPin className="size-4 text-[var(--signal)]" /><h2 className="text-sm font-semibold">Location</h2></div>
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <div className="space-y-2"><Label htmlFor="complete-country">Country</Label><NativeSelect id="complete-country" aria-label="Country" value={country} onChange={(e) => { setCountry(e.target.value); setStateRegion(''); setCity('') }}><NativeSelectOption value="">Select country</NativeSelectOption>{Country.getAllCountries().map((item) => <NativeSelectOption key={item.isoCode} value={item.isoCode}>{item.name}</NativeSelectOption>)}</NativeSelect></div>
-                  <div className="space-y-2"><Label htmlFor="complete-state">State / Region</Label><NativeSelect id="complete-state" aria-label="State or Region" value={stateRegion} disabled={!country} onChange={(e) => { setStateRegion(e.target.value); setCity('') }}><NativeSelectOption value="">Select state / region</NativeSelectOption>{states.map((item) => <NativeSelectOption key={item.isoCode} value={item.isoCode}>{item.name}</NativeSelectOption>)}</NativeSelect></div>
-                  <div className="space-y-2"><Label htmlFor="complete-city">City</Label><NativeSelect id="complete-city" aria-label="City" value={city} disabled={!stateRegion} onChange={(e) => setCity(e.target.value)}><NativeSelectOption value="">Select city</NativeSelectOption>{cities.map((item) => <NativeSelectOption key={item.name} value={item.name}>{item.name}</NativeSelectOption>)}</NativeSelect></div>
-                </div>
-              </section>
-
-              <Separator />
-
               <section className="space-y-4">
                 <Label>Years of Experience</Label>
                 <div className="grid gap-2 sm:grid-cols-2">

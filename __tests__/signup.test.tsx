@@ -34,6 +34,10 @@ describe('SignupPage', () => {
   it('renders the Create Account heading', () => {
     render(<SignupPage />)
     expect(screen.getByRole('heading', { name: 'Create Account' })).toBeInTheDocument()
+    expect(screen.getByText('Sign up to start your assessment')).toBeInTheDocument()
+    expect(screen.getByText(/^or$/i)).toBeInTheDocument()
+    expect(screen.queryByText(/or use email/i)).not.toBeInTheDocument()
+    expect(screen.queryByText('Minimum 8 characters')).not.toBeInTheDocument()
   })
 
   it('renders a link back to login', () => {

@@ -45,6 +45,8 @@ const DOMAIN_ICONS: Record<Domain, LucideIcon> = {
   data_science: ChartNoAxesCombined,
 }
 
+const AVAILABLE_DOMAINS = new Set<Domain>(['ai'])
+
 const DOMAINS = ALL_DOMAINS.map((id, index) => ({
   id,
   index: index + 1,
@@ -60,7 +62,7 @@ export default function DomainSelector() {
   const SelectedIcon = selectedDomain?.icon
 
   function handleConfirm() {
-    if (!selected) return
+    if (!selected || !AVAILABLE_DOMAINS.has(selected)) return
     trackEvent('domain_selected', { domain: selected })
     router.push(`/test/${selected}`)
   }
@@ -70,6 +72,56 @@ export default function DomainSelector() {
       <div className="grid gap-3">
         {DOMAINS.map((domain) => {
           const Icon = domain.icon
+          const isAvailable = AVAILABLE_DOMAINS.has(domain.id)
+          const cardContent = (
+            <CardContent className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 p-4 sm:gap-5 sm:p-5">
+              <span
+                className={isAvailable
+                  ? 'flex size-11 shrink-0 items-center justify-center rounded-xl bg-[var(--signal-soft)] text-[var(--signal)] transition-colors group-hover:bg-[var(--signal)] group-hover:text-white'
+                  : 'flex size-11 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground/55 blur-[1px]'}
+              >
+                <Icon className="size-5" strokeWidth={1.8} />
+              </span>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-[9px] font-semibold text-muted-foreground">{String(domain.index).padStart(2, '0')}</span>
+                  <h3 className="text-[15px] font-semibold leading-5 text-foreground">{domain.name}</h3>
+                </div>
+                <p className={isAvailable
+                  ? 'mt-1.5 text-[13px] font-normal leading-5 text-muted-foreground sm:truncate'
+                  : 'mt-1.5 select-none text-[13px] font-normal leading-5 text-muted-foreground opacity-40 blur-[1.5px] sm:truncate'}
+                >
+                  {domain.description}
+                </p>
+              </div>
+              {isAvailable ? (
+                <div className="flex items-center gap-3 pl-2">
+                  <span className="hidden text-right font-mono text-[10px] font-medium uppercase leading-4 tracking-wide text-muted-foreground sm:block">5 min<br />10 questions</span>
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-background text-foreground transition-colors group-hover:border-[var(--action)] group-hover:bg-[var(--action)] group-hover:text-white">
+                    <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                  </span>
+                </div>
+              ) : (
+                <Badge variant="secondary" className="shrink-0 px-2.5 py-1 text-[10px] uppercase tracking-wide">
+                  Coming soon
+                </Badge>
+              )}
+            </CardContent>
+          )
+
+          if (!isAvailable) {
+            return (
+              <Card
+                key={domain.id}
+                aria-disabled="true"
+                data-testid={`coming-soon-${domain.id}`}
+                className="relative gap-0 overflow-hidden border-dashed bg-card/65 py-0 shadow-xs"
+              >
+                {cardContent}
+              </Card>
+            )
+          }
+
           return (
             <Card
               key={domain.id}
@@ -81,24 +133,7 @@ export default function DomainSelector() {
                 aria-label={`Select ${domain.name} assessment`}
                 className="h-full min-h-24 w-full items-stretch justify-start whitespace-normal rounded-xl p-0 text-left hover:bg-muted/35"
               >
-                <CardContent className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 p-4 sm:gap-5 sm:p-5">
-                  <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[var(--signal-soft)] text-[var(--signal)] transition-colors group-hover:bg-[var(--signal)] group-hover:text-white">
-                    <Icon className="size-5" strokeWidth={1.8} />
-                  </span>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-[9px] font-semibold text-muted-foreground">{String(domain.index).padStart(2, '0')}</span>
-                      <h3 className="text-[15px] font-semibold leading-5 text-foreground">{domain.name}</h3>
-                    </div>
-                    <p className="mt-1.5 text-[13px] font-normal leading-5 text-muted-foreground sm:truncate">{domain.description}</p>
-                  </div>
-                  <div className="flex items-center gap-3 pl-2">
-                    <span className="hidden text-right font-mono text-[10px] font-medium uppercase leading-4 tracking-wide text-muted-foreground sm:block">5 min<br />10 questions</span>
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-background text-foreground transition-colors group-hover:border-[var(--action)] group-hover:bg-[var(--action)] group-hover:text-white">
-                      <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-                    </span>
-                  </div>
-                </CardContent>
+                {cardContent}
               </Button>
             </Card>
           )

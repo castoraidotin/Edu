@@ -12,6 +12,7 @@ jest.mock('next/link', () => ({
 }))
 jest.mock('@/auth', () => ({ auth: jest.fn().mockResolvedValue(null) }))
 jest.mock('@/components/HomeSignupForm', () => ({ __esModule: true, default: () => null }))
+jest.mock('@/components/LogoutButton', () => ({ __esModule: true, default: () => null }))
 
 import Home from '@/app/page'
 

@@ -1,7 +1,6 @@
-import { auth } from '@/auth'
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabase-server'
+import { requireProductAccess } from '@/lib/product-access-server'
 import DomainSelector from '@/components/DomainSelector'
 import DashboardShell from '@/components/dashboard/DashboardShell'
 import CastorPromoBanner from '@/components/dashboard/CastorPromoBanner'
@@ -20,19 +19,7 @@ interface ResultRow {
 }
 
 export default async function DashboardPage() {
-  const session = await auth()
-  if (!session) redirect('/login')
-
-  const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('profile_completed, country, state_region, city')
-    .eq('email', session.user?.email)
-    .single()
-
-  const profileComplete =
-    profile?.profile_completed && profile?.country && profile?.state_region && profile?.city
-
-  if (!profileComplete) redirect('/profile/complete')
+  const { session } = await requireProductAccess()
 
   const { data: rawResults } = await supabaseAdmin
     .from('test_results')
@@ -58,7 +45,7 @@ export default async function DashboardPage() {
             <div className="mb-5">
               <h2 className="text-2xl font-semibold tracking-tight">Assessments</h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Choose a domain to start a focused 10-question benchmark.
+                Start with AI &amp; Generative AI. More assessment domains are on the way.
               </p>
             </div>
             <DomainSelector />

@@ -46,35 +46,34 @@ export default function LoginPage() {
 
   return (
     <AuthShell
-      eyebrow="Welcome back"
       title="Sign In"
-      description="Continue to your assessments, results, and community benchmarks."
-      footer={<>Don&apos;t have an account?{' '}<Link href="/signup" className="font-semibold text-foreground underline-offset-4 hover:underline">Create one</Link></>}
+      description="Sign in to start your assessment"
+      footer={<>Don&apos;t have an account?{' '}<Link href="/signup" className="font-semibold text-foreground underline-offset-4 hover:underline">Sign up</Link></>}
     >
-      <Button type="button" variant="outline" size="lg" onClick={handleGoogleLogin} className="w-full">
+      <Button type="button" variant="outline" size="lg" onClick={handleGoogleLogin} className="h-12 w-full bg-white hover:bg-white/80">
         <GoogleIcon />
         Continue with Google
       </Button>
 
-      <div className="my-6 flex items-center gap-3">
+      <div className="my-6 flex items-center gap-4">
         <Separator className="flex-1" />
-        <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">or use email</span>
+        <span className="text-xs font-medium uppercase text-muted-foreground">or</span>
         <Separator className="flex-1" />
       </div>
 
-      <form onSubmit={handleCredentialsLogin} className="space-y-5">
+      <form onSubmit={handleCredentialsLogin} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="login-email">Email</Label>
-          <Input id="login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" placeholder="you@example.com" />
+          <Input id="login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" placeholder="you@example.com" className="h-10 bg-white" />
         </div>
         <div className="space-y-2">
           <Label htmlFor="login-password">Password</Label>
-          <Input id="login-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" placeholder="••••••••" />
+          <Input id="login-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" placeholder="••••••••" className="h-10 bg-white" />
         </div>
 
         {error && <p role="alert" className="rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">{error}</p>}
 
-        <Button type="submit" disabled={loading} size="lg" className="w-full">
+        <Button type="submit" disabled={loading} size="lg" className="h-12 w-full">
           {loading ? 'Signing in...' : 'Sign in'}
         </Button>
       </form>

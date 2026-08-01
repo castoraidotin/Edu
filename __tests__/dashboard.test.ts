@@ -100,4 +100,10 @@ describe('DashboardPage — profile completion gate', () => {
     // Should resolve to a React element — no redirect thrown
     await expect(DashboardPage()).resolves.toBeDefined()
   })
+
+  it('redirects completed profiles outside Hyderabad to the coming-soon page', async () => {
+    mockAuth.mockResolvedValue(authedSession)
+    mockProfileSelect({ profile_completed: true, country: 'India', state_region: 'Telangana', city: 'Warangal' })
+    await expectRedirectTo('/coming-soon', () => DashboardPage())
+  })
 })

@@ -26,10 +26,12 @@ import {
 
 interface DashboardShellProps {
   children: ReactNode
+  activePath?: '/dashboard' | '/stats'
+  title?: string
 }
 
 const navigation = [
-  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, active: true },
+  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Insights', href: '/stats', icon: BarChart3 },
 ]
 
@@ -71,7 +73,11 @@ function SidebarBrand() {
   )
 }
 
-export default function DashboardShell({ children }: DashboardShellProps) {
+export default function DashboardShell({
+  children,
+  activePath = '/dashboard',
+  title = 'Dashboard',
+}: DashboardShellProps) {
   return (
     <SidebarProvider>
       <Sidebar variant="inset" collapsible="icon">
@@ -88,7 +94,7 @@ export default function DashboardShell({ children }: DashboardShellProps) {
                   const Icon = item.icon
                   return (
                     <SidebarMenuItem key={item.label}>
-                      <SidebarMenuButton asChild isActive={item.active} tooltip={item.label} className="h-9">
+                      <SidebarMenuButton asChild isActive={item.href === activePath} tooltip={item.label} className="h-9">
                         <Link href={item.href}><Icon /><span>{item.label}</span></Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -109,7 +115,7 @@ export default function DashboardShell({ children }: DashboardShellProps) {
         <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center border-b bg-card/90 px-4 backdrop-blur-md dark:bg-[#212121]/95 sm:px-5">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mx-3 h-4" />
-          <p className="text-sm font-medium">Dashboard</p>
+          <p className="text-sm font-medium">{title}</p>
         </header>
         {children}
       </SidebarInset>
