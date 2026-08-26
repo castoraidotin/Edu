@@ -104,7 +104,7 @@ describe('CompletionCertificate', () => {
     const openedUrl = linkedInLink.getAttribute('href') ?? ''
     expect(openedUrl).toContain('linkedin.com/sharing/share-offsite')
     expect(decodeURIComponent(openedUrl)).toContain(
-      'https://edu.castorai.in/certificate/attempt-1234?share=certificate-v1',
+      'https://edu.castorai.in/certificate/attempt-1234?share=certificate-v2',
     )
     expect(await screen.findByRole('status')).toHaveTextContent(/certificate preview/i)
     expect(mockToBlob).not.toHaveBeenCalled()
@@ -120,7 +120,7 @@ describe('CompletionCertificate', () => {
     expect(openedUrl.origin).toBe('https://x.com')
     expect(openedUrl.searchParams.get('text')).toBe(CERTIFICATE_SHARE_TEXT)
     expect(openedUrl.searchParams.get('url')).toBe(
-      'https://edu.castorai.in/certificate/attempt-1234?share=certificate-v1',
+      'https://edu.castorai.in/certificate/attempt-1234?share=certificate-v2',
     )
   })
 

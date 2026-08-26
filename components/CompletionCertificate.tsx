@@ -115,7 +115,10 @@ export default function CompletionCertificate({
   const credentialId = `EDU-AI-${(attemptId ?? 'COMPLETED').replace(/-/g, '').slice(0, 10).toUpperCase()}`
   const caption = CERTIFICATE_SHARE_TEXT
   const shareUrl = certificateShareUrl(attemptId)
-  const socialShareUrl = attemptId ? `${shareUrl}?share=certificate-v1` : shareUrl
+  // Version the social URL so LinkedIn/Facebook re-scrape metadata after the
+  // public certificate route or preview image changes instead of reusing a
+  // stale generic card cached for an earlier deployment.
+  const socialShareUrl = attemptId ? `${shareUrl}?share=certificate-v2` : shareUrl
   const fileName = certificateFileName(displayName)
 
   async function renderCertificate() {
