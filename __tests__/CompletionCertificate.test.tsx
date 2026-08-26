@@ -12,7 +12,6 @@ const mockToBlob = toBlob as jest.Mock
 describe('CompletionCertificate', () => {
   const originalCreateObjectUrl = URL.createObjectURL
   const originalRevokeObjectUrl = URL.revokeObjectURL
-  const originalOpen = window.open
   const originalShare = navigator.share
   const originalCanShare = navigator.canShare
   const originalClipboard = navigator.clipboard
@@ -23,7 +22,6 @@ describe('CompletionCertificate', () => {
     mockToBlob.mockResolvedValue(new Blob(['certificate'], { type: 'image/png' }))
     URL.createObjectURL = jest.fn(() => 'blob:certificate')
     URL.revokeObjectURL = jest.fn()
-    window.open = jest.fn()
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
       value: { writeText: jest.fn().mockResolvedValue(undefined) },
@@ -35,7 +33,6 @@ describe('CompletionCertificate', () => {
   afterEach(() => {
     URL.createObjectURL = originalCreateObjectUrl
     URL.revokeObjectURL = originalRevokeObjectUrl
-    window.open = originalOpen
     Object.defineProperty(navigator, 'share', { configurable: true, value: originalShare })
     Object.defineProperty(navigator, 'canShare', { configurable: true, value: originalCanShare })
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: originalClipboard })
@@ -100,10 +97,11 @@ describe('CompletionCertificate', () => {
   it('opens LinkedIn with a certificate-specific preview URL and copies the post text', async () => {
     render(<CompletionCertificate recipientName="Test User" score={8} attemptId="attempt-1234" />)
 
-    fireEvent.click(screen.getByRole('button', { name: /Share on LinkedIn/i }))
+    const linkedInLink = screen.getByRole('link', { name: /Share on LinkedIn/i })
+    fireEvent.click(linkedInLink)
 
     await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledWith(CERTIFICATE_SHARE_TEXT))
-    const openedUrl = (window.open as jest.Mock).mock.calls[0][0] as string
+    const openedUrl = linkedInLink.getAttribute('href') ?? ''
     expect(openedUrl).toContain('linkedin.com/sharing/share-offsite')
     expect(decodeURIComponent(openedUrl)).toContain(
       'https://edu.castorai.in/certificate/attempt-1234?share=certificate-v1',
@@ -115,10 +113,10 @@ describe('CompletionCertificate', () => {
   it('prefills Twitter\/X with the exact post text and certificate URL', async () => {
     render(<CompletionCertificate recipientName="Test User" score={8} attemptId="attempt-1234" />)
 
-    fireEvent.click(screen.getByRole('button', { name: /Share on Twitter\/X/i }))
+    const twitterLink = screen.getByRole('link', { name: /Share on Twitter\/X/i })
+    fireEvent.click(twitterLink)
 
-    await waitFor(() => expect(window.open).toHaveBeenCalled())
-    const openedUrl = new URL((window.open as jest.Mock).mock.calls[0][0] as string)
+    const openedUrl = new URL(twitterLink.getAttribute('href') ?? '')
     expect(openedUrl.origin).toBe('https://x.com')
     expect(openedUrl.searchParams.get('text')).toBe(CERTIFICATE_SHARE_TEXT)
     expect(openedUrl.searchParams.get('url')).toBe(
@@ -134,7 +132,7 @@ describe('CompletionCertificate', () => {
     })
     render(<CompletionCertificate recipientName="Test User" score={8} attemptId="attempt-1234" />)
 
-    fireEvent.click(screen.getByRole('button', { name: /Share on Facebook/i }))
+    fireEvent.click(screen.getByRole('link', { name: /Share on Facebook/i }))
 
     await waitFor(() => expect(document.execCommand).toHaveBeenCalledWith('copy'))
     expect(await screen.findByRole('status')).toHaveTextContent(/post text is copied/i)
@@ -144,6 +142,9 @@ describe('CompletionCertificate', () => {
   it('labels X sharing as Twitter/X', () => {
     render(<CompletionCertificate recipientName="Test User" score={8} attemptId="attempt-1234" />)
 
-    expect(screen.getByRole('button', { name: 'Share on Twitter/X' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Share on Twitter/X' })).toHaveAttribute(
+      'target',
+      '_blank',
+    )
   })
 })

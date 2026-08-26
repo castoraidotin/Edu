@@ -174,11 +174,7 @@ export default function CompletionCertificate({
   }
 
   async function handlePlatformShare(platform: SharePlatform) {
-    const copyPromise = platform === 'x' ? Promise.resolve(false) : copyShareText(caption)
-    window.open(platformShareUrl(platform, caption, socialShareUrl), '_blank', 'noopener,noreferrer')
     setStatus(null)
-
-    const copied = await copyPromise
 
     const platformLabel =
       platform === 'linkedin' ? 'LinkedIn' : platform === 'x' ? 'Twitter/X' : 'Facebook'
@@ -190,6 +186,7 @@ export default function CompletionCertificate({
       return
     }
 
+    const copied = await copyShareText(caption)
     setStatus({
       tone: 'success',
       message: copied
@@ -209,9 +206,27 @@ export default function CompletionCertificate({
             <h2 className="text-xl font-bold text-[var(--ink)] sm:text-2xl">Your certificate is ready</h2>
           </div>
           <div className="grid grid-cols-3 gap-2">
-            <PlatformButton platform="linkedin" label="LinkedIn" mark="in" onClick={() => handlePlatformShare('linkedin')} disabled={isExporting} />
-            <PlatformButton platform="x" label="Twitter/X" mark="X" onClick={() => handlePlatformShare('x')} disabled={isExporting} />
-            <PlatformButton platform="facebook" label="Facebook" mark="f" onClick={() => handlePlatformShare('facebook')} disabled={isExporting} />
+            <PlatformLink
+              platform="linkedin"
+              label="LinkedIn"
+              mark="in"
+              href={platformShareUrl('linkedin', caption, socialShareUrl)}
+              onClick={() => void handlePlatformShare('linkedin')}
+            />
+            <PlatformLink
+              platform="x"
+              label="Twitter/X"
+              mark="X"
+              href={platformShareUrl('x', caption, socialShareUrl)}
+              onClick={() => void handlePlatformShare('x')}
+            />
+            <PlatformLink
+              platform="facebook"
+              label="Facebook"
+              mark="f"
+              href={platformShareUrl('facebook', caption, socialShareUrl)}
+              onClick={() => void handlePlatformShare('facebook')}
+            />
           </div>
         </div>
       </div>
@@ -343,26 +358,27 @@ function CertificateMeta({
   )
 }
 
-function PlatformButton({
+function PlatformLink({
   platform,
   label,
   mark,
+  href,
   onClick,
-  disabled,
 }: {
   platform: SharePlatform
   label: string
   mark: string
+  href: string
   onClick: () => void
-  disabled: boolean
 }) {
   return (
-    <button
-      type="button"
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
       onClick={onClick}
-      disabled={disabled}
       aria-label={`Share on ${label}`}
-      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-[var(--line)] bg-white px-2 text-xs font-semibold text-[var(--ink)] transition-colors hover:bg-[var(--paper)] disabled:pointer-events-none disabled:opacity-50"
+      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-[var(--line)] bg-white px-2 text-xs font-semibold text-[var(--ink)] transition-colors hover:bg-[var(--paper)]"
     >
       <span
         className={`flex size-4 items-center justify-center font-sans text-[9px] font-bold ${
@@ -378,6 +394,6 @@ function PlatformButton({
       </span>
       <span className="hidden sm:inline">{label}</span>
       <ExternalLink className="size-3 text-[var(--ink-soft)]" aria-hidden="true" />
-    </button>
+    </a>
   )
 }

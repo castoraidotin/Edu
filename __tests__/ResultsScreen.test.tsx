@@ -194,9 +194,9 @@ describe('ResultsScreen', () => {
       expect(certificate).toHaveTextContent('EDU-AI-12345678AB')
       expect(screen.getByRole('button', { name: /Share certificate/i })).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /Download PNG/i })).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /Share on LinkedIn/i })).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /Share on Twitter\/X/i })).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /Share on Facebook/i })).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: /Share on LinkedIn/i })).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: /Share on Twitter\/X/i })).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: /Share on Facebook/i })).toBeInTheDocument()
     })
 
     it('does not show the certificate after a non-AI assessment', () => {
