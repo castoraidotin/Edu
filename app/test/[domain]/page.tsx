@@ -36,13 +36,14 @@ export default function TestPage() {
   const params = useParams()
   const router = useRouter()
   const domain = params.domain as Domain
-  const { status } = useSession()
+  const { data: session, status } = useSession()
 
   const [phase, setPhase] = useState<Phase>('loading')
   const [questions, setQuestions] = useState<ClientQuestion[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [answers, setAnswers] = useState<Record<string, CorrectAnswer>>({})
   const [score, setScore] = useState<number | null>(null)
+  const [completedAt, setCompletedAt] = useState<string | null>(null)
   const [attemptId, setAttemptId] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState('')
 
@@ -126,6 +127,7 @@ export default function TestPage() {
       setCurrentIndex(0)
       setAnswers({})
       setScore(null)
+      setCompletedAt(null)
       setAttemptId(null)
       setErrorMessage('')
 
@@ -182,6 +184,7 @@ export default function TestPage() {
         const data = await res.json()
         const finalScore = typeof data.score === 'number' ? data.score : 0
         setScore(finalScore)
+        setCompletedAt(new Date().toISOString())
         setPhase('results')
         trackEvent('quiz_completed', { domain, score: finalScore })
       } catch {
@@ -311,7 +314,16 @@ export default function TestPage() {
 
   // Results
   if (phase === 'results' && score !== null) {
-    return <ResultsScreen domain={domain} score={score} onTryAgain={handleTryAgain} />
+    return (
+      <ResultsScreen
+        domain={domain}
+        score={score}
+        recipientName={session?.user?.name}
+        attemptId={attemptId}
+        completedAt={completedAt ?? undefined}
+        onTryAgain={handleTryAgain}
+      />
+    )
   }
 
   // Submitting

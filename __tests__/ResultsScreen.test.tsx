@@ -27,7 +27,7 @@ describe('ResultsScreen', () => {
     render(<ResultsScreen domain="ai" score={6} onTryAgain={onTryAgain} />)
 
     expect(screen.getByText('Your benchmark')).toBeInTheDocument()
-    expect(screen.getByText('Artificial Intelligence & Generative AI')).toBeInTheDocument()
+    expect(screen.getAllByText('Artificial Intelligence & Generative AI')).not.toHaveLength(0)
     expect(screen.getByText('6')).toBeInTheDocument()
     expect(screen.getByText('Average')).toBeInTheDocument()
   })
@@ -171,16 +171,37 @@ describe('ResultsScreen', () => {
     })
   })
 
-  describe('share button removed', () => {
-    // LinkedIn share intentionally isn't rendered — LinkedIn blocks
-    // pre-filled compose text from external sites, so any "share" button
-    // would force the user to paste manually. Replaced by the
-    // add-to-LinkedIn certificate flow (see TODO). This test pins the removal
-    // so a future refactor doesn't silently reintroduce it.
-    it('does not render a LinkedIn share button on the results screen', () => {
-      render(<ResultsScreen domain="ai" score={8} onTryAgain={onTryAgain} />)
-      expect(screen.queryByTestId('results-share-linkedin')).not.toBeInTheDocument()
-      expect(screen.queryByText(/Share on LinkedIn/i)).not.toBeInTheDocument()
+  describe('AI completion certificate', () => {
+    it('shows a personalized certificate after an AI assessment', () => {
+      render(
+        <ResultsScreen
+          domain="ai"
+          score={8}
+          recipientName="Shanthan Kumar"
+          attemptId="12345678-abcd-efgh"
+          completedAt="2026-08-26T12:00:00.000Z"
+          onTryAgain={onTryAgain}
+        />
+      )
+
+      const certificate = screen.getByTestId('ai-completion-certificate')
+      expect(certificate).toHaveTextContent('Your certificate is ready')
+      expect(
+        screen.getByRole('heading', { name: 'Your benchmark' }).compareDocumentPosition(certificate) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
+      expect(certificate).toHaveTextContent('Shanthan Kumar')
+      expect(certificate).toHaveTextContent('EDU-AI-12345678AB')
+      expect(screen.getByRole('button', { name: /Share certificate/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Download PNG/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Share on LinkedIn/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Share on Twitter\/X/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Share on Facebook/i })).toBeInTheDocument()
+    })
+
+    it('does not show the certificate after a non-AI assessment', () => {
+      render(<ResultsScreen domain="cloud" score={8} onTryAgain={onTryAgain} />)
+      expect(screen.queryByTestId('ai-completion-certificate')).not.toBeInTheDocument()
     })
   })
 

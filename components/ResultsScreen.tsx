@@ -9,11 +9,15 @@ import { trackEvent } from '@/lib/analytics'
 import { RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import CompletionCertificate from '@/components/CompletionCertificate'
 
 interface ResultsScreenProps {
   domain: Domain
   score: number
   onTryAgain: () => void
+  recipientName?: string | null
+  attemptId?: string | null
+  completedAt?: string
 }
 
 // Tier bands mirror app/test/[domain]/page.tsx and app/dashboard/page.tsx so
@@ -81,7 +85,14 @@ function buildCtaUrl(domain: Domain, variant: CtaVariant): string {
   return url.toString()
 }
 
-export default function ResultsScreen({ domain, score, onTryAgain }: ResultsScreenProps) {
+export default function ResultsScreen({
+  domain,
+  score,
+  onTryAgain,
+  recipientName,
+  attemptId,
+  completedAt,
+}: ResultsScreenProps) {
   const router = useRouter()
   const tier = getScoreTier(score)
   const diagnosis = TIER_DIAGNOSIS[tier.key]
@@ -91,12 +102,17 @@ export default function ResultsScreen({ domain, score, onTryAgain }: ResultsScre
   const ctaUrl = buildCtaUrl(domain, ctaVariant)
 
   return (
-    <main className="flex min-h-screen items-start justify-center bg-background px-4 py-8 sm:items-center sm:py-12">
-      <div className="w-full max-w-xl space-y-4">
-        {/* Unified score + CTA card — the Castor pitch lives inside the same
-            card as the score so it reads as "here's your result, here's the
-            natural next step" instead of a separate ad block below the score. */}
-        <Card className="gap-0 overflow-hidden py-0 shadow-xl shadow-slate-900/10">
+    <main className="relative isolate min-h-screen bg-background">
+      <section
+        className={`relative z-0 flex min-h-screen items-center justify-center px-4 py-8 sm:py-12 ${
+          domain === 'ai' ? 'results-stack-score' : ''
+        }`}
+      >
+        <div className="w-full max-w-xl space-y-4">
+          {/* Unified score + CTA card — the Castor pitch lives inside the same
+              card as the score so it reads as "here's your result, here's the
+              natural next step" instead of a separate ad block below the score. */}
+          <Card className="gap-0 overflow-hidden py-0 shadow-xl shadow-slate-900/10">
           {/* Score section */}
           <div className="p-6 sm:p-10 text-center">
             <p className="font-mono text-xs uppercase tracking-widest text-[var(--ink-soft)] mb-1">
@@ -151,29 +167,47 @@ export default function ResultsScreen({ domain, score, onTryAgain }: ResultsScre
             </a>
             </Button>
           </div>
-        </Card>
+          </Card>
 
-        {/* Secondary actions — outlined, de-emphasized against the primary
-            CTA above. */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={onTryAgain}
-            className="flex-1"
-          >
-            <RotateCcw /> Try again
-          </Button>
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={() => router.push('/dashboard')}
-            className="flex-1"
-          >
-            Dashboard
-          </Button>
+          {/* Secondary actions — outlined, de-emphasized against the primary
+              CTA above. */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={onTryAgain}
+              className="flex-1"
+            >
+              <RotateCcw /> Try again
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => router.push('/dashboard')}
+              className="flex-1"
+            >
+              Dashboard
+            </Button>
+          </div>
+
         </div>
-      </div>
+      </section>
+
+      {domain === 'ai' && (
+        <section
+          id="completion-certificate"
+          className="relative z-10 min-h-screen scroll-mt-0 bg-[var(--paper)] px-4 py-8 shadow-[0_-24px_64px_rgba(15,23,42,0.12)] sm:py-12"
+        >
+          <div className="results-stack-certificate-preview mx-auto w-full max-w-4xl">
+              <CompletionCertificate
+                recipientName={recipientName}
+                score={score}
+                attemptId={attemptId}
+                completedAt={completedAt}
+              />
+          </div>
+        </section>
+      )}
     </main>
   )
 }

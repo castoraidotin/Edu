@@ -209,3 +209,18 @@
 .animate-bounce-slow {
   animation: bounce-slow 2s ease-in-out infinite;
 }
+
+/* Results use the homepage's stacked-card motion only when there is enough
+   room for both layers. Short or narrow viewports fall back to normal flow so
+   the certificate never opens with cropped corners or hidden controls. */
+@media (min-width: 768px) and (min-height: 600px) {
+  .results-stack-score {
+    position: sticky;
+    top: 0;
+  }
+
+  .results-stack-certificate-preview {
+    position: relative;
+    top: -7.5rem;
+  }
+}
