@@ -178,8 +178,11 @@ describe('ResultsScreen', () => {
           domain="ai"
           score={8}
           recipientName="Shanthan Kumar"
-          attemptId="12345678-abcd-efgh"
-          completedAt="2026-08-26T12:00:00.000Z"
+          certificate={{
+            attemptId: '12345678-abcd-efgh',
+            score: 8,
+            completedAt: '2026-08-26T12:00:00.000Z',
+          }}
           onTryAgain={onTryAgain}
         />
       )
@@ -201,6 +204,31 @@ describe('ResultsScreen', () => {
 
     it('does not show the certificate after a non-AI assessment', () => {
       render(<ResultsScreen domain="cloud" score={8} onTryAgain={onTryAgain} />)
+      expect(screen.queryByTestId('ai-completion-certificate')).not.toBeInTheDocument()
+    })
+
+    it('keeps the first-attempt certificate score after an AI retake', () => {
+      render(
+        <ResultsScreen
+          domain="ai"
+          score={10}
+          recipientName="Shanthan Kumar"
+          certificate={{
+            attemptId: '12345678-abcd-efgh',
+            score: 6,
+            completedAt: '2026-08-26T12:00:00.000Z',
+          }}
+          onTryAgain={onTryAgain}
+        />
+      )
+
+      expect(screen.getByRole('heading', { name: 'Your benchmark' }).parentElement).toHaveTextContent('10 / 10')
+      expect(screen.getByTestId('ai-completion-certificate')).toHaveTextContent('6/10')
+      expect(screen.getByTestId('ai-completion-certificate')).not.toHaveTextContent('10/10')
+    })
+
+    it('does not mint a certificate client-side without an issued first-attempt record', () => {
+      render(<ResultsScreen domain="ai" score={8} onTryAgain={onTryAgain} />)
       expect(screen.queryByTestId('ai-completion-certificate')).not.toBeInTheDocument()
     })
   })

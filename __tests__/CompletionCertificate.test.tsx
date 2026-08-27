@@ -58,6 +58,17 @@ describe('CompletionCertificate', () => {
     expect(screen.queryByText(/Save a polished copy/i)).not.toBeInTheDocument()
   })
 
+  it('fits a long recipient name without truncating it', () => {
+    const longName = 'Alexandria Catherine Montgomery-Wellington Narayanaswamy'
+    render(<CompletionCertificate recipientName={longName} score={9} attemptId="attempt-1234" />)
+
+    const recipientName = screen.getByTestId('certificate-recipient-name')
+    expect(recipientName).toHaveTextContent(longName)
+    expect(recipientName).not.toHaveClass('truncate')
+    expect(recipientName).not.toHaveClass('whitespace-nowrap')
+    expect(recipientName).toHaveStyle({ fontSize: expect.stringContaining('clamp(16px') })
+  })
+
   it('exports the rendered certificate in a landscape certificate format', async () => {
     render(
       <CompletionCertificate

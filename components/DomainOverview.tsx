@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import type { Domain } from '@/lib/types'
-import { ALL_DOMAINS, DOMAIN_LABELS_SHORT as DOMAIN_LABELS } from '@/lib/domains'
+import { DOMAIN_LABELS_SHORT as DOMAIN_LABELS } from '@/lib/domains'
 import { crowdFilterParams } from '@/lib/crowd-filter-params'
 import ScoreGauge from '@/components/ui/ScoreGauge'
 import { Badge } from '@/components/ui/badge'
@@ -61,7 +61,7 @@ export default function DomainOverview({ designation, experience, country, state
       data-testid="domain-overview"
       className="grid grid-cols-[repeat(auto-fit,minmax(min(220px,100%),1fr))] gap-4"
     >
-      {ALL_DOMAINS.map((d) => {
+      {(['ai'] as const).map((d) => {
         const avg = data.averageScoreByDomain[d]
         const count = data.attemptCounts[d] ?? 0
         const isMostAttempted = data.mostAttemptedDomain === d

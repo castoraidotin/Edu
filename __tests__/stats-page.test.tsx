@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act, within } from '@testing-library/react'
 import StatsPage from '@/app/stats/page'
 
 jest.mock('next-auth/react', () => ({
@@ -67,6 +67,14 @@ function statsBody(overrides: Record<string, unknown> = {}) {
         percentile: 75,
         cohortSize: 5,
         averageScore: 7.5,
+      },
+      {
+        dimension: 'Country',
+        label: 'India',
+        rank: 1,
+        percentile: 80,
+        cohortSize: 5,
+        averageScore: 7.8,
       },
     ],
     topCitiesByScore: [{ label: 'Hyderabad', count: 5, averageScore: 8, rank: 1, isYou: true }],
@@ -211,25 +219,26 @@ describe('StatsPage', () => {
     await waitForCommunityInsights()
   })
 
-  it('hides the location filters until "More filters" is clicked', async () => {
+  it('does not offer location filters because the page is fixed to Hyderabad', async () => {
     installFetchMock()
     render(<StatsPage />)
     expect(screen.queryByLabelText('Country')).not.toBeInTheDocument()
     await waitForCommunityInsights()
 
     openMoreFilters()
-    expect(screen.getByLabelText('Country')).toBeInTheDocument()
-    expect(screen.getByLabelText('State or Region')).toBeInTheDocument()
-    expect(screen.getByLabelText('City')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Country')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('State or Region')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('City')).not.toBeInTheDocument()
   })
 
-  it('state and city dropdowns start disabled until a country/state is chosen', async () => {
+  it('always requests the Hyderabad launch cohort', async () => {
     installFetchMock()
     render(<StatsPage />)
     await waitForCommunityInsights()
-    openMoreFilters()
-    expect(screen.getByLabelText('State or Region')).toBeDisabled()
-    expect(screen.getByLabelText('City')).toBeDisabled()
+    expect(mockFetch).toHaveBeenCalledWith(expect.stringMatching(/\/api\/stats\?.*country=India/))
+    expect(mockFetch).toHaveBeenCalledWith(expect.stringMatching(/\/api\/stats\?.*state_region=Telangana/))
+    expect(mockFetch).toHaveBeenCalledWith(expect.stringMatching(/\/api\/stats\?.*city=Hyderabad/))
+    expect(mockFetch).toHaveBeenCalledWith(expect.stringMatching(/\/api\/stats\?.*launch_city_only=true/))
   })
 
   it('shows the hero row, score trend, and community benchmark once data is loaded', async () => {
@@ -239,6 +248,7 @@ describe('StatsPage', () => {
     expect(screen.getByTestId('hero-row')).toBeInTheDocument()
     expect(screen.getByText('Score trend')).toBeInTheDocument()
     expect(screen.getByText('Where you stand')).toBeInTheDocument()
+    expect(screen.queryByText('Recent attempts')).not.toBeInTheDocument()
   })
 
   it("shows the hero row's tests taken, average score, best score, and percentile", async () => {
@@ -256,14 +266,11 @@ describe('StatsPage', () => {
     expect(hero).toHaveTextContent('80')
   })
 
-  it('shows the rank ladder with your rank at each scope', async () => {
+  it('does not show city, state, country, or global rank scopes', async () => {
     installFetchMock()
     render(<StatsPage />)
-    await waitFor(() => expect(screen.getByTestId('rank-ladder-tile')).toBeInTheDocument())
-    const ladder = screen.getByTestId('rank-ladder-tile')
-    expect(ladder).toHaveTextContent('City')
-    expect(ladder).toHaveTextContent('Hyderabad')
-    expect(ladder).toHaveTextContent('Global')
+    await waitForCommunityInsights()
+    expect(screen.queryByTestId('rank-ladder-tile')).not.toBeInTheDocument()
   })
 
   it('shows peer group ranks with cohort, test-takers, average, and your rank', async () => {
@@ -273,6 +280,8 @@ describe('StatsPage', () => {
     const peerGroups = screen.getByTestId('peer-groups-tile')
     expect(peerGroups).toHaveTextContent('Software Engineer / Developer')
     expect(peerGroups).toHaveTextContent('#2')
+    expect(peerGroups).not.toHaveTextContent('Country')
+    expect(peerGroups).not.toHaveTextContent('India')
   })
 
   it('shows the community snapshot with median, mode, top, and low scores', async () => {
@@ -297,14 +306,14 @@ describe('StatsPage', () => {
     expect(neighbors).not.toHaveTextContent('test@test.com')
   })
 
-  it('shows local, country and global score comparisons', async () => {
+  it('does not show geographic comparison or regional ranking cards', async () => {
     installFetchMock()
     render(<StatsPage />)
-    await waitFor(() => expect(screen.getByTestId('location-comparison-tile')).toBeInTheDocument())
-    const comparison = screen.getByTestId('location-comparison-tile')
-    expect(comparison).toHaveTextContent('Hyderabad')
-    expect(comparison).toHaveTextContent('India')
-    expect(comparison).toHaveTextContent('Global')
+    await waitForCommunityInsights()
+    expect(screen.queryByTestId('location-comparison-tile')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('top-states-tile')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('top-cities-tile')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('domain-radar-tile')).not.toBeInTheDocument()
   })
 
   it('shows a no-attempts message when nobody has taken the test yet', async () => {
@@ -321,15 +330,14 @@ describe('StatsPage', () => {
     expect(screen.getByTestId('score-distribution-tile')).toBeInTheDocument()
   })
 
-  it('refetches when the domain dropdown changes', async () => {
+  it('shows only AI in the Stats domain dropdown', async () => {
     installFetchMock()
     render(<StatsPage />)
     await waitFor(() => expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('domain=ai')))
     openMoreFilters()
-    fireEvent.change(screen.getByLabelText('Domain'), { target: { value: 'cybersecurity' } })
-    await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('domain=cybersecurity'))
-    })
+    const domainSelect = screen.getByLabelText('Domain')
+    expect(domainSelect).toHaveValue('ai')
+    expect(within(domainSelect).getAllByRole('option')).toHaveLength(1)
     await flushMicrotasks()
   })
 
@@ -357,21 +365,17 @@ describe('StatsPage', () => {
     await flushMicrotasks()
   })
 
-  it('cascades country -> state -> city and sends human-readable names', async () => {
+  it('keeps overview and leaderboard requests scoped to Hyderabad', async () => {
     installFetchMock()
     render(<StatsPage />)
     await waitFor(() => expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('domain=ai')))
-    openMoreFilters()
-
-    fireEvent.change(screen.getByLabelText('Country'), { target: { value: 'IN' } })
-    expect(screen.getByLabelText('State or Region')).not.toBeDisabled()
-
-    fireEvent.change(screen.getByLabelText('State or Region'), { target: { value: 'TG' } })
-    expect(screen.getByLabelText('City')).not.toBeDisabled()
-
+    fireEvent.click(screen.getByRole('tab', { name: 'Domain Overview' }))
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('country=India'))
-      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('state_region=Telangana'))
+      expect(mockFetch).toHaveBeenCalledWith(expect.stringMatching(/\/api\/stats\/overview\?.*city=Hyderabad/))
+    })
+    fireEvent.click(screen.getByRole('tab', { name: 'Leaderboard' }))
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith(expect.stringMatching(/\/api\/stats\/leaderboard\?.*city=Hyderabad/))
     })
     await flushMicrotasks()
   })
@@ -381,7 +385,7 @@ describe('StatsPage', () => {
     render(<StatsPage />)
     await waitFor(() => expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('domain=ai')))
     openMoreFilters()
-    fireEvent.change(screen.getByLabelText('Country'), { target: { value: 'IN' } })
+    fireEvent.change(screen.getByLabelText('Designation'), { target: { value: 'Data Scientist' } })
     fireEvent.click(screen.getByRole('button', { name: /view comparison/i }))
     expect(screen.getByRole('button', { name: /more filters/i })).toBeInTheDocument()
     expect(screen.getByTestId('filter-count-badge')).toHaveTextContent('1')
@@ -414,6 +418,11 @@ describe('StatsPage', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: 'Domain Overview' }))
     await waitFor(() => expect(screen.getByTestId('domain-overview')).toBeInTheDocument())
+    expect(screen.getByText('AI & Generative AI')).toBeInTheDocument()
+    expect(screen.queryByText('Cloud Computing')).not.toBeInTheDocument()
+    expect(screen.queryByText('Cybersecurity')).not.toBeInTheDocument()
+    expect(screen.queryByText('DevOps & CI/CD')).not.toBeInTheDocument()
+    expect(screen.queryByText('Data Science & Analytics')).not.toBeInTheDocument()
     expect(screen.queryByTestId('community-insights')).not.toBeInTheDocument()
   })
 

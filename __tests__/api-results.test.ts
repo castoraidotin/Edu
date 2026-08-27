@@ -248,6 +248,75 @@ describe('POST /api/results', () => {
     expect(body.score).toBe(8)
   })
 
+  it('returns the locked first-attempt certificate after an AI retake', async () => {
+    mockAuth.mockResolvedValue({ user: { email: 'test@test.com', id: 'uid-1' } })
+    const firstAttemptId = '11111111-1111-4111-8111-111111111111'
+    const certificateQuery = {
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      not: jest.fn().mockReturnThis(),
+      order: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      maybeSingle: jest.fn().mockResolvedValue({
+        data: {
+          id: 'first-result',
+          quiz_attempt_id: firstAttemptId,
+          score: 5,
+          completed_at: '2026-08-01T10:00:00.000Z',
+        },
+        error: null,
+      }),
+    }
+
+    mockFrom
+      .mockImplementationOnce(() => ({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({
+                data: {
+                  id: 'attempt-1',
+                  domain: 'ai',
+                  question_ids: QUESTION_IDS,
+                  started_at: new Date(Date.now() - 30_000).toISOString(),
+                  expires_at: new Date(Date.now() + 300_000).toISOString(),
+                  completed_at: null,
+                },
+                error: null,
+              }),
+            }),
+          }),
+        }),
+      }))
+      .mockImplementationOnce(() => ({
+        select: jest.fn().mockReturnValue({
+          in: jest.fn().mockReturnValue({
+            eq: jest.fn().mockResolvedValue({ data: mockDbQuestions, error: null }),
+          }),
+        }),
+      }))
+      .mockImplementationOnce(() => ({ insert: jest.fn().mockResolvedValue({ error: null }) }))
+      .mockImplementationOnce(() => ({
+        update: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            is: jest.fn().mockResolvedValue({ error: null }),
+          }),
+        }),
+      }))
+      .mockImplementationOnce(() => certificateQuery)
+
+    const res = await POST(makeRequest({ ...validPayload, domain: 'ai' }))
+    expect(res.status).toBe(200)
+    await expect(res.json()).resolves.toEqual({
+      score: 8,
+      certificate: {
+        attemptId: firstAttemptId,
+        score: 5,
+        completedAt: '2026-08-01T10:00:00.000Z',
+      },
+    })
+  })
+
   it('returns 400 when the attempt does not exist for this user', async () => {
     mockAuth.mockResolvedValue({ user: { email: 'test@test.com' } })
     mockDB({ attempt: null, attemptError: { code: 'PGRST116' } })

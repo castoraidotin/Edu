@@ -35,6 +35,15 @@ export interface TestResult {
   completed_at: string
 }
 
+// The certificate is intentionally tied to the user's first completed AI
+// assessment. Retakes produce normal test results, but they always receive
+// this same immutable summary instead of minting a new certificate.
+export interface CertificateSummary {
+  attemptId: string
+  score: number
+  completedAt: string
+}
+
 export interface SubmitResultPayload {
   domain: Domain
   attempt_id: string

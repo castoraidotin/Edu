@@ -9,7 +9,7 @@ import PromoInterstitial from '@/components/PromoInterstitial'
 import PromoAdSlide from '@/components/PromoAdSlide'
 import PromoBadge from '@/components/PromoBadge'
 import ResultsScreen from '@/components/ResultsScreen'
-import type { ClientQuestion, CorrectAnswer, Domain } from '@/lib/types'
+import type { CertificateSummary, ClientQuestion, CorrectAnswer, Domain } from '@/lib/types'
 import { ALL_DOMAINS as VALID_DOMAINS, DOMAIN_LABELS } from '@/lib/domains'
 import { antiCheatHandlers } from '@/lib/anti-cheat'
 import { trackEvent } from '@/lib/analytics'
@@ -43,7 +43,7 @@ export default function TestPage() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [answers, setAnswers] = useState<Record<string, CorrectAnswer>>({})
   const [score, setScore] = useState<number | null>(null)
-  const [completedAt, setCompletedAt] = useState<string | null>(null)
+  const [certificate, setCertificate] = useState<CertificateSummary | null>(null)
   const [attemptId, setAttemptId] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState('')
 
@@ -127,7 +127,7 @@ export default function TestPage() {
       setCurrentIndex(0)
       setAnswers({})
       setScore(null)
-      setCompletedAt(null)
+      setCertificate(null)
       setAttemptId(null)
       setErrorMessage('')
 
@@ -184,7 +184,7 @@ export default function TestPage() {
         const data = await res.json()
         const finalScore = typeof data.score === 'number' ? data.score : 0
         setScore(finalScore)
-        setCompletedAt(new Date().toISOString())
+        setCertificate(data.certificate ?? null)
         setPhase('results')
         trackEvent('quiz_completed', { domain, score: finalScore })
       } catch {
@@ -319,8 +319,7 @@ export default function TestPage() {
         domain={domain}
         score={score}
         recipientName={session?.user?.name}
-        attemptId={attemptId}
-        completedAt={completedAt ?? undefined}
+        certificate={certificate}
         onTryAgain={handleTryAgain}
       />
     )

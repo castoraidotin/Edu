@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
-import { BarChart3, LayoutDashboard } from 'lucide-react'
+import { Award, BarChart3, LayoutDashboard } from 'lucide-react'
 import UserMenu from '@/components/UserMenu'
 import { Separator } from '@/components/ui/separator'
 import {
@@ -26,13 +26,14 @@ import {
 
 interface DashboardShellProps {
   children: ReactNode
-  activePath?: '/dashboard' | '/stats'
+  activePath?: '/dashboard' | '/stats' | '/certificates'
   title?: string
 }
 
 const navigation = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Insights', href: '/stats', icon: BarChart3 },
+  { label: 'Certificates', href: '/certificates', icon: Award },
 ]
 
 function SidebarBrand() {

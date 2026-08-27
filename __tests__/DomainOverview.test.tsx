@@ -17,7 +17,7 @@ describe('DomainOverview', () => {
     expect(screen.getByText('Loading domain averages…')).toBeInTheDocument()
   })
 
-  it('renders an average score card for every domain', async () => {
+  it('renders only the available AI domain card', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
@@ -31,9 +31,14 @@ describe('DomainOverview', () => {
     const overview = screen.getByTestId('domain-overview')
     expect(overview).toHaveClass('grid')
     expect(overview).not.toHaveClass('flex')
+    expect(overview.children).toHaveLength(1)
     expect(Array.from(overview.children).every((card) => !card.classList.contains('flex-1'))).toBe(true)
     expect(screen.getByText('7.5')).toBeInTheDocument()
-    expect(screen.getByText('—')).toBeInTheDocument() // cybersecurity has no data yet
+    expect(screen.getByText('AI & Generative AI')).toBeInTheDocument()
+    expect(screen.queryByText('Cloud Computing')).not.toBeInTheDocument()
+    expect(screen.queryByText('Cybersecurity')).not.toBeInTheDocument()
+    expect(screen.queryByText('DevOps & CI/CD')).not.toBeInTheDocument()
+    expect(screen.queryByText('Data Science & Analytics')).not.toBeInTheDocument()
   })
 
   it('badges the most-attempted domain', async () => {

@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import ScoreGauge from '@/components/ui/ScoreGauge'
-import type { Domain } from '@/lib/types'
+import type { CertificateSummary, Domain } from '@/lib/types'
 import { DOMAIN_LABELS } from '@/lib/domains'
 import { PROMO_BRAND_NAME } from '@/lib/promo'
 import { trackEvent } from '@/lib/analytics'
@@ -16,8 +16,7 @@ interface ResultsScreenProps {
   score: number
   onTryAgain: () => void
   recipientName?: string | null
-  attemptId?: string | null
-  completedAt?: string
+  certificate?: CertificateSummary | null
 }
 
 // Tier bands mirror app/test/[domain]/page.tsx and app/dashboard/page.tsx so
@@ -90,8 +89,7 @@ export default function ResultsScreen({
   score,
   onTryAgain,
   recipientName,
-  attemptId,
-  completedAt,
+  certificate,
 }: ResultsScreenProps) {
   const router = useRouter()
   const tier = getScoreTier(score)
@@ -193,7 +191,7 @@ export default function ResultsScreen({
         </div>
       </section>
 
-      {domain === 'ai' && (
+      {domain === 'ai' && certificate && (
         <section
           id="completion-certificate"
           className="relative z-10 min-h-screen scroll-mt-0 bg-[var(--paper)] px-4 py-8 shadow-[0_-24px_64px_rgba(15,23,42,0.12)] sm:py-12"
@@ -201,9 +199,9 @@ export default function ResultsScreen({
           <div className="results-stack-certificate-preview mx-auto w-full max-w-4xl">
               <CompletionCertificate
                 recipientName={recipientName}
-                score={score}
-                attemptId={attemptId}
-                completedAt={completedAt}
+                score={certificate.score}
+                attemptId={certificate.attemptId}
+                completedAt={certificate.completedAt}
               />
           </div>
         </section>

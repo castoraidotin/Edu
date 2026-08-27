@@ -43,21 +43,9 @@ import {
 } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 function domainLabel(domain: string) {
   return DOMAIN_LABELS_SHORT[domain as Domain] ?? domain
-}
-
-function compactDomainLabel(domain: string) {
-  const labels: Record<Domain, string> = {
-    ai: 'AI',
-    cloud: 'Cloud',
-    cybersecurity: 'Cyber',
-    devops: 'DevOps',
-    data_science: 'Data',
-  }
-  return labels[domain as Domain] ?? domain
 }
 
 function formatChange(change: number | null) {
@@ -308,81 +296,6 @@ function ActivityCard({ stats, personal }: { stats: StatsResponse; personal: Per
   )
 }
 
-function RecentAttemptsCard({ personal }: { personal: PersonalStatsResponse }) {
-  const attempts = personal.recentAttempts.slice(0, 6)
-  return (
-    <InsightCard title="Recent attempts" description="Your latest results, newest first" icon={Clock3}>
-      {attempts.length === 0 ? (
-        <EmptyState>No attempts yet.</EmptyState>
-      ) : (
-        <Table>
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="pl-0">Domain</TableHead>
-              <TableHead className="text-right">Score</TableHead>
-              <TableHead className="hidden text-right sm:table-cell">Date</TableHead>
-              <TableHead className="pr-0 text-right">Change</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {attempts.map((attempt, index) => (
-              <TableRow key={`${attempt.domain}-${attempt.completedAt}-${index}`}>
-                <TableCell className="max-w-44 truncate pl-0 font-medium">{domainLabel(attempt.domain)}</TableCell>
-                <TableCell className="text-right font-mono font-semibold">{attempt.score}/10</TableCell>
-                <TableCell className="hidden text-right text-muted-foreground sm:table-cell">{formatDate(attempt.completedAt)}</TableCell>
-                <TableCell className={`pr-0 text-right font-mono text-xs ${changeClass(attempt.scoreChangeFromPrevious)}`}>
-                  {attempt.scoreChangeFromPrevious === null
-                    ? '—'
-                    : `${attempt.scoreChangeFromPrevious > 0 ? '+' : ''}${attempt.scoreChangeFromPrevious}`}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
-    </InsightCard>
-  )
-}
-
-function DomainComparisonCard({ personal }: { personal: PersonalStatsResponse }) {
-  const data = personal.domainRadar.map((point) => ({
-    domain: compactDomainLabel(point.domain),
-    You: point.you ?? 0,
-    City: point.city ?? 0,
-    Country: point.country ?? 0,
-  }))
-  const hasData = personal.domainRadar.some((point) => point.you !== null || point.city !== null || point.country !== null)
-
-  return (
-    <InsightCard title="Across domains" description="You compared with city and country averages" icon={Compass} testId="domain-radar-tile">
-      {!hasData ? (
-        <EmptyState>Complete more domains to unlock this comparison.</EmptyState>
-      ) : (
-        <>
-          <div className="mb-4 flex flex-wrap gap-4 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1.5"><span className="size-2 rounded-sm bg-[var(--signal)]" />You</span>
-            <span className="flex items-center gap-1.5"><span className="size-2 rounded-sm bg-[var(--chart-3)]" />City</span>
-            <span className="flex items-center gap-1.5"><span className="size-2 rounded-sm bg-muted-foreground/35" />Country</span>
-          </div>
-          <div className="h-56 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} layout="vertical" margin={{ top: 0, right: 4, bottom: 0, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border)" />
-                <XAxis type="number" domain={[0, 10]} hide />
-                <YAxis dataKey="domain" type="category" axisLine={false} tickLine={false} width={44} tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} />
-                <RechartsTooltip contentStyle={tooltipStyle} formatter={(value) => [`${value ?? 0}/10`]} />
-                <Bar dataKey="You" fill="var(--signal)" radius={[0, 3, 3, 0]} />
-                <Bar dataKey="City" fill="var(--chart-3)" radius={[0, 3, 3, 0]} />
-                <Bar dataKey="Country" fill="color-mix(in srgb, var(--muted-foreground) 35%, transparent)" radius={[0, 3, 3, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </>
-      )}
-    </InsightCard>
-  )
-}
-
 function LearningPatternsCard({ personal }: { personal: PersonalStatsResponse }) {
   const bestWindow = [...personal.timeOfDayPerformance].sort(
     (a, b) => b.averageScore - a.averageScore || b.count - a.count
@@ -590,13 +503,14 @@ function LocationComparisonCard({ stats }: { stats: StatsResponse }) {
 }
 
 function PeerGroupsCard({ stats }: { stats: StatsResponse }) {
-  const groups = stats.peerGroupRanks.filter((group) => group.rank !== null)
+  const groups = stats.peerGroupRanks.filter(
+    (group) => group.rank !== null && (group.dimension === 'Role' || group.dimension === 'Experience')
+  )
+  if (groups.length === 0) return null
+
   return (
     <InsightCard title="Your peer groups" description="How you rank inside the groups most relevant to you" icon={Users} testId="peer-groups-tile">
-      {groups.length === 0 ? (
-        <EmptyState>There is not enough peer-group data yet.</EmptyState>
-      ) : (
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {groups.map((group) => (
             <div key={group.dimension} className="rounded-lg border p-4">
               <p className="text-xs text-muted-foreground">{group.dimension}</p>
@@ -608,8 +522,7 @@ function PeerGroupsCard({ stats }: { stats: StatsResponse }) {
               </div>
             </div>
           ))}
-        </div>
-      )}
+      </div>
     </InsightCard>
   )
 }
@@ -710,9 +623,7 @@ export default function CommunityInsights({
 
       <section className="grid gap-4 lg:grid-cols-12" aria-label="Personal performance">
         <div className="lg:col-span-12"><ScoreTrendCard personal={personal} /></div>
-        <div className="lg:col-span-4"><ActivityCard stats={stats} personal={personal} /></div>
-        <div className="lg:col-span-4"><RecentAttemptsCard personal={personal} /></div>
-        <div className="lg:col-span-4"><DomainComparisonCard personal={personal} /></div>
+        <div className="lg:col-span-12"><ActivityCard stats={stats} personal={personal} /></div>
         <div className="lg:col-span-12"><LearningPatternsCard personal={personal} /></div>
       </section>
 
@@ -720,17 +631,13 @@ export default function CommunityInsights({
         <SectionHeading
           eyebrow="Community benchmark"
           title="Where you stand"
-          description="These comparisons respond to the domain, role, experience, and location filters you selected."
+          description="Compare your performance with other learners in Hyderabad by domain, role, and experience."
         />
         <div className="grid gap-4 lg:grid-cols-12">
           <div className="lg:col-span-7"><ScoreDistributionCard stats={stats} /></div>
           <div className="lg:col-span-5"><CommunitySnapshotCard stats={stats} /></div>
-          <div className="lg:col-span-7"><RankLadderCard stats={stats} domain={domain} /></div>
-          <div className="lg:col-span-5"><NeighborsCard stats={stats} /></div>
-          <div className="lg:col-span-12"><LocationComparisonCard stats={stats} /></div>
+          <div className="lg:col-span-12"><NeighborsCard stats={stats} /></div>
           <div className="lg:col-span-12"><PeerGroupsCard stats={stats} /></div>
-          <div className="lg:col-span-6"><TopPlacesCard stats={stats} kind="states" /></div>
-          <div className="lg:col-span-6"><TopPlacesCard stats={stats} kind="cities" /></div>
         </div>
       </section>
     </div>

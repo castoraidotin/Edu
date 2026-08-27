@@ -1,5 +1,6 @@
 import 'server-only'
 import { supabaseAdmin } from '@/lib/supabase-server'
+import type { CertificateSummary } from '@/lib/types'
 
 export interface CertificateData {
   attemptId: string
@@ -8,6 +9,43 @@ export interface CertificateData {
   completedAt: string
 }
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+interface CertificateResultRow {
+  id: string
+  quiz_attempt_id: string | null
+  score: number
+  completed_at: string
+}
+
+/**
+ * Returns the one certificate-bearing result for a user: their earliest
+ * completed AI assessment with an issued quiz attempt. Ordering by id after
+ * completed_at makes the choice deterministic even if two rows share a
+ * timestamp. No retake can update or replace this row.
+ */
+export async function getFirstCertificateForUser(
+  userEmail: string,
+): Promise<CertificateSummary | null> {
+  const { data, error } = await supabaseAdmin
+    .from('test_results')
+    .select('id, quiz_attempt_id, score, completed_at')
+    .eq('user_email', userEmail)
+    .eq('domain', 'ai')
+    .not('quiz_attempt_id', 'is', null)
+    .order('completed_at', { ascending: true })
+    .order('id', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+
+  const result = data as CertificateResultRow | null
+  if (error || !result?.quiz_attempt_id) return null
+
+  return {
+    attemptId: result.quiz_attempt_id,
+    score: result.score,
+    completedAt: result.completed_at,
+  }
+}
 
 export async function getCertificateData(attemptId: string): Promise<CertificateData | null> {
   if (!UUID_PATTERN.test(attemptId)) return null
@@ -20,6 +58,12 @@ export async function getCertificateData(attemptId: string): Promise<Certificate
     .maybeSingle()
 
   if (error || !result) return null
+
+  // Public certificate links are valid only for the first AI attempt. This
+  // prevents an old retake URL from minting a second certificate with a
+  // different score.
+  const issuedCertificate = await getFirstCertificateForUser(result.user_email)
+  if (!issuedCertificate || issuedCertificate.attemptId !== attemptId) return null
 
   const { data: profile } = await supabaseAdmin
     .from('profiles')

@@ -97,6 +97,7 @@ export default function CompletionCertificate({
   const [isExporting, setIsExporting] = useState(false)
   const [status, setStatus] = useState<ExportStatus>(null)
   const displayName = recipientName?.trim() || 'AI learner'
+  const certificateNameSize = Math.max(2.6, Math.min(6.1, 155 / Array.from(displayName).length))
   const issuedDateLabel = completedAt
     ? new Date(completedAt).toLocaleDateString('en-US', {
         month: 'long',
@@ -270,7 +271,11 @@ export default function CompletionCertificate({
                 <p className="absolute left-1/2 top-[36.6%] -translate-x-1/2 text-[clamp(7px,1.7cqw,18px)] font-medium leading-[1.25] text-[#27312d]">
                   Awarded to
                 </p>
-                <h3 className="absolute left-1/2 top-[42%] max-w-[76%] -translate-x-1/2 truncate whitespace-nowrap font-serif text-[clamp(21px,6.1cqw,72px)] leading-none tracking-[-0.035em] text-[#27925a]">
+                <h3
+                  data-testid="certificate-recipient-name"
+                  className="absolute left-1/2 top-[40.5%] w-[76%] -translate-x-1/2 text-center font-serif leading-[0.95] tracking-[-0.035em] text-[#27925a] [overflow-wrap:anywhere]"
+                  style={{ fontSize: `clamp(16px, ${certificateNameSize}cqw, 72px)` }}
+                >
                   {displayName}
                 </h3>
 
