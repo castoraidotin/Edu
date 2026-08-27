@@ -4,6 +4,7 @@ import type { SubmitResultPayload } from '@/lib/types'
 import { ALL_DOMAINS as VALID_DOMAINS } from '@/lib/domains'
 import { requireSession } from '@/lib/session'
 import { isRateLimited } from '@/lib/rate-limit'
+import { getFirstCertificateForUser } from '@/lib/certificate-data'
 
 // Every test consists of exactly this many questions — enforce it exactly so a
 // crafted request can't submit fewer (easier, cherry-picked) questions to
@@ -17,6 +18,15 @@ const QUIZ_DURATION_SECONDS = 300
 // wall-clock advances). Also acts as the outer bound on legit wall-clock
 // elapsed. Kept in sync with the same constant in app/api/questions/[domain]/route.ts.
 const MAX_PAUSE_GRACE_SECONDS = 120
+
+async function resultPayload(score: number, domain: string, userEmail: string) {
+  if (domain !== 'ai') return { score }
+
+  return {
+    score,
+    certificate: await getFirstCertificateForUser(userEmail),
+  }
+}
 
 export async function GET() {
   const { session, unauthorizedResponse } = await requireSession()
@@ -86,7 +96,7 @@ export async function POST(req: NextRequest) {
       .eq('quiz_attempt_id', attempt_id)
       .single()
     return existing
-      ? NextResponse.json({ score: existing.score })
+      ? NextResponse.json(await resultPayload(existing.score, domain, session.user.email))
       : NextResponse.json({ error: 'Quiz attempt was already completed' }, { status: 409 })
   }
   if (attempt.domain !== domain || new Date(attempt.expires_at).getTime() < Date.now()) {
@@ -165,7 +175,9 @@ export async function POST(req: NextRequest) {
       .select('score')
       .eq('quiz_attempt_id', attempt_id)
       .single()
-    if (existing) return NextResponse.json({ score: existing.score })
+    if (existing) {
+      return NextResponse.json(await resultPayload(existing.score, domain, session.user.email))
+    }
     return NextResponse.json({ error: 'Failed to save result' }, { status: 500 })
   }
 
@@ -178,5 +190,5 @@ export async function POST(req: NextRequest) {
     console.error('[POST /api/results] Failed to mark quiz attempt completed:', completeError.message)
   }
 
-  return NextResponse.json({ score: verifiedScore })
+  return NextResponse.json(await resultPayload(verifiedScore, domain, session.user.email))
 }

@@ -10,6 +10,7 @@ import {
   PROMO_FACT_ROTATE_INTERVAL_MS,
 } from '@/lib/promo'
 import { trackEvent } from '@/lib/analytics'
+import { Button } from '@/components/ui/button'
 
 // How long the crossfade itself takes, in ms — purely a visual timing
 // constant, not content, so it stays local rather than living in lib/promo.ts.
@@ -80,14 +81,16 @@ export default function PromoAdSlide() {
         </p>
         <div className="flex items-center gap-1.5">
           {PROMO_AD_SLIDE_FACTS.map((_, i) => (
-            <button
+            <Button
+              type="button"
+              variant="ghost"
               key={i}
               onClick={() => {
                 setIndex(i)
                 setVisible(true)
               }}
               aria-label={`Show fact ${i + 1} of ${PROMO_AD_SLIDE_FACTS.length}`}
-              className={`h-1.5 rounded-full transition-all ${
+              className={`h-1.5 min-h-0 rounded-full p-0 transition-all hover:bg-[var(--action)] ${
                 i === index ? 'w-4 bg-[var(--action)]' : 'w-1.5 bg-[var(--line)]'
               }`}
             />
@@ -95,7 +98,7 @@ export default function PromoAdSlide() {
         </div>
       </div>
 
-      <a
+      <Button asChild size="lg"><a
         href={PROMO_AD_SLIDE_URL}
         target="_blank"
         rel="noopener noreferrer"
@@ -103,7 +106,7 @@ export default function PromoAdSlide() {
         className="block w-full text-center bg-[var(--action)] text-white rounded-md py-3 font-medium hover:bg-[var(--action-hover)] transition-colors"
       >
         {PROMO_CTA_LABEL} →
-      </a>
+      </a></Button>
     </div>
   )
 }

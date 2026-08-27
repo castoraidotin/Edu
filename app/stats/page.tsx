@@ -1,20 +1,33 @@
 'use client'
 
 import { useEffect, useState, Suspense } from 'react'
-import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
-import { Country, State, City } from 'country-state-city'
-import UserMenu from '@/components/UserMenu'
-import AppHeader from '@/components/AppHeader'
 import DomainOverview from '@/components/DomainOverview'
 import Leaderboard from '@/components/Leaderboard'
 import CommunityInsights from '@/components/stats/CommunityInsights'
+import DashboardShell from '@/components/dashboard/DashboardShell'
 import type { Domain } from '@/lib/types'
-import { ALL_DOMAINS, DOMAIN_LABELS } from '@/lib/domains'
+import { DOMAIN_LABELS } from '@/lib/domains'
 import { DESIGNATION_OPTIONS, EXPERIENCE_OPTIONS } from '@/lib/profile-options'
 import { crowdFilterParams } from '@/lib/crowd-filter-params'
 import type { PersonalStatsResponse, StatsResponse } from '@/lib/stats-types'
 import { trackEvent } from '@/lib/analytics'
+import { BarChart3, MapPin, SlidersHorizontal } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 const TABS = [
   { id: 'performance', label: 'Community Insights' },
@@ -24,42 +37,19 @@ const TABS = [
 
 type Tab = (typeof TABS)[number]['id']
 
-function nameToCountryCode(name: string): string {
-  if (!name) return ''
-  return Country.getAllCountries().find((country) => country.name === name)?.isoCode ?? ''
-}
-
-function nameToStateCode(name: string, countryCode: string): string {
-  if (!name || !countryCode) return ''
-  return State.getStatesOfCountry(countryCode).find((state) => state.name === name)?.isoCode ?? ''
-}
+const LAUNCH_LOCATION = { country: 'India', stateRegion: 'Telangana', city: 'Hyderabad' } as const
 
 function StatsContent() {
-  const searchParams = useSearchParams()
-  const initialDomain = (searchParams?.get('domain') as Domain) || 'ai'
-
   const [tab, setTab] = useState<Tab>('performance')
   const [showMoreFilters, setShowMoreFilters] = useState(false)
 
-  const [domain, setDomain] = useState<Domain>(
-    ALL_DOMAINS.includes(initialDomain) ? initialDomain : 'ai'
-  )
+  const [domain, setDomain] = useState<Domain>('ai')
   const [designation, setDesignation] = useState('all')
   const [experience, setExperience] = useState('all')
-  const [countryCode, setCountryCode] = useState('')
-  const [stateCode, setStateCode] = useState('')
-  const [city, setCity] = useState('')
   const [data, setData] = useState<StatsResponse | null>(null)
   const [personalData, setPersonalData] = useState<PersonalStatsResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [profileLocationReady, setProfileLocationReady] = useState(false)
-
-  const states = countryCode ? State.getStatesOfCountry(countryCode) : []
-  const cities = countryCode && stateCode ? City.getCitiesOfState(countryCode, stateCode) : []
-
-  const countryName = countryCode ? Country.getCountryByCode(countryCode)?.name ?? '' : ''
-  const stateName = stateCode ? State.getStateByCodeAndCountry(stateCode, countryCode)?.name ?? '' : ''
 
   // Fire stats_viewed once when the stats page mounts. Uses `domain` (the
   // sanitized state), not `initialDomain` (the raw query param), so an
@@ -73,38 +63,7 @@ function StatsContent() {
   useEffect(() => {
     let cancelled = false
 
-    async function fetchProfileLocation() {
-      try {
-        const res = await fetch('/api/profile')
-        if (!res.ok) return
-        const json = await res.json()
-        const profile = json.profile
-        const initialCountryCode = nameToCountryCode(profile?.country ?? '')
-        const initialStateCode = nameToStateCode(profile?.state_region ?? '', initialCountryCode)
-
-        if (!cancelled && initialCountryCode) {
-          setCountryCode(initialCountryCode)
-          setStateCode(initialStateCode)
-          setCity(profile?.city ?? '')
-        }
-      } catch {
-        // Profile location is only a convenience default; broad stats should still load.
-      } finally {
-        if (!cancelled) setProfileLocationReady(true)
-      }
-    }
-
-    fetchProfileLocation()
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  useEffect(() => {
-    let cancelled = false
-
     async function fetchStats() {
-      if (!profileLocationReady) return
       try {
         setLoading(true)
         const params = new URLSearchParams({
@@ -112,10 +71,11 @@ function StatsContent() {
           ...crowdFilterParams({
             designation,
             experience,
-            country: countryName || 'all',
-            state_region: stateName || 'all',
-            city: city || 'all',
+            country: LAUNCH_LOCATION.country,
+            state_region: LAUNCH_LOCATION.stateRegion,
+            city: LAUNCH_LOCATION.city,
           }),
+          launch_city_only: 'true',
         })
         const res = await fetch(`/api/stats?${params}`)
         if (!res.ok) throw new Error('Failed to load stats')
@@ -135,7 +95,7 @@ function StatsContent() {
     return () => {
       cancelled = true
     }
-  }, [domain, designation, experience, countryName, stateName, city, profileLocationReady])
+  }, [domain, designation, experience])
 
   // The cross-domain "You, over time" and Domain Radar widgets need the
   // user's own activity across every domain, not just the one selected above,
@@ -144,12 +104,11 @@ function StatsContent() {
     let cancelled = false
 
     async function fetchPersonalStats() {
-      if (!profileLocationReady) return
       try {
         const params = new URLSearchParams({
           domain,
-          city: city || 'all',
-          country: countryName || 'all',
+          city: LAUNCH_LOCATION.city,
+          country: LAUNCH_LOCATION.country,
         })
         const res = await fetch(`/api/stats/personal?${params}`)
         if (!res.ok) throw new Error('Failed to load personal stats')
@@ -164,224 +123,124 @@ function StatsContent() {
     return () => {
       cancelled = true
     }
-  }, [domain, city, countryName, profileLocationReady])
+  }, [domain])
 
-  const activeFilterCount = [countryCode, stateCode, city].filter((v) => v !== '').length
-  const communityScope = city || stateName || countryName || 'everyone'
-  const hasSpecificCommunity = communityScope !== 'everyone'
-  const pageTitle = hasSpecificCommunity ? `${communityScope} Benchmark` : 'Community Insights'
+  const selectedFilterCount = (designation === 'all' ? 0 : 1)
+    + (experience === 'all' ? 0 : 1)
+  const communityScope = LAUNCH_LOCATION.city
+  const hasSpecificCommunity = true
+  const locationLabel = `${LAUNCH_LOCATION.city}, ${LAUNCH_LOCATION.stateRegion}, ${LAUNCH_LOCATION.country}`
+  const cohortLabel = [
+    designation === 'all' ? 'All roles' : designation,
+    experience === 'all' ? 'all experience levels' : experience,
+  ].join(' Â· ')
 
   return (
-    <main className="min-h-screen bg-[var(--paper)]">
-      <AppHeader right={<UserMenu />} />
+    <DashboardShell activePath="/stats" title="Insights">
+      <main className="mx-auto w-full max-w-[1532px] px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
+        <header className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <div className="flex size-7 items-center justify-center rounded-md bg-[var(--signal-soft)] text-[var(--signal)]">
+                <BarChart3 className="size-4" />
+              </div>
+              <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Community insights</h1>
+            </div>
+            <p className="hidden">
+              {DOMAIN_LABELS[domain]} <span aria-hidden="true">Â·</span> {cohortLabel}
+            </p>
+            <p className="mt-1.5 flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
+              <span className="truncate">{DOMAIN_LABELS[domain]}</span>
+              <span aria-hidden="true">·</span>
+              <span className="truncate">{designation === 'all' ? 'All roles' : designation} · {experience === 'all' ? 'all experience levels' : experience}</span>
+            </p>
+          </div>
+          <Badge variant="outline" className="hidden h-8 w-fit max-w-72 gap-1.5 truncate bg-card px-3 font-normal text-muted-foreground shadow-xs sm:flex">
+            <MapPin className="size-3.5 text-[var(--signal)]" /> {locationLabel}
+          </Badge>
+        </header>
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-1 text-sm text-[var(--ink-soft)] hover:text-[var(--ink)] transition-colors mb-6"
-        >
-          &larr; Back to Dashboard
-        </Link>
-
-        <h1 className="text-2xl font-bold text-[var(--ink)] mb-1">{pageTitle}</h1>
-        <p className="text-[var(--ink-soft)] mb-4">
-          See how many people are taking {DOMAIN_LABELS[domain]}, how they score, and where you stand.
-        </p>
-
-        {/* Domain + Designation share a row so the chart doesn't get pushed below the fold */}
-        <div className="flex flex-wrap items-end gap-4 mb-4">
-          <div className="w-full sm:flex-1 sm:min-w-[140px] sm:max-w-xs">
-            <label htmlFor="stats-domain" className="block text-sm font-medium text-[var(--ink)] mb-1">
-              Domain
-            </label>
-            <select
-              id="stats-domain"
-              aria-label="Domain"
-              value={domain}
-              onChange={(e) => setDomain(e.target.value as Domain)}
-              className="w-full border border-[var(--line)] rounded-lg pl-3 pr-8 py-2 text-sm bg-[var(--surface)]"
-            >
-              {ALL_DOMAINS.map((d) => (
-                <option key={d} value={d}>
-                  {DOMAIN_LABELS[d]}
-                </option>
-              ))}
-            </select>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground sm:hidden">
+            <MapPin className="size-3.5 shrink-0 text-[var(--signal)]" />
+            <span className="truncate">{locationLabel}</span>
           </div>
 
-          <div className="w-full sm:flex-1 sm:min-w-[140px] sm:max-w-xs">
-            <label htmlFor="stats-designation" className="block text-sm font-medium text-[var(--ink)] mb-1">
-              Designation
-            </label>
-            <select
-              id="stats-designation"
-              aria-label="Designation"
-              value={designation}
-              onChange={(e) => setDesignation(e.target.value)}
-              className="w-full border border-[var(--line)] rounded-lg pl-3 pr-8 py-2 text-sm bg-[var(--surface)]"
-            >
-              <option value="all">All designations</option>
-              {DESIGNATION_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
-          </div>
+          <Sheet open={showMoreFilters} onOpenChange={setShowMoreFilters}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm" aria-label="More filters" className="ml-auto bg-card shadow-xs">
+                <SlidersHorizontal />
+                Filters
+                {selectedFilterCount > 0 && (
+                  <span data-testid="filter-count-badge" className="flex size-5 items-center justify-center rounded-full bg-[var(--signal-soft)] text-[10px] font-semibold text-[var(--signal)]">
+                    {selectedFilterCount}
+                  </span>
+                )}
+              </Button>
+            </SheetTrigger>
 
-          <div className="w-full sm:flex-1 sm:min-w-[140px] sm:max-w-xs">
-            <label htmlFor="stats-experience" className="block text-sm font-medium text-[var(--ink)] mb-1">
-              Experience
-            </label>
-            <select
-              id="stats-experience"
-              aria-label="Experience"
-              value={experience}
-              onChange={(e) => setExperience(e.target.value)}
-              className="w-full border border-[var(--line)] rounded-lg pl-3 pr-8 py-2 text-sm bg-[var(--surface)]"
-            >
-              <option value="all">All experience levels</option>
-              {EXPERIENCE_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
-          </div>
+            <SheetContent className="sm:max-w-md">
+              <SheetHeader className="border-b px-5 py-5">
+                <SheetTitle>Comparison filters</SheetTitle>
+                <SheetDescription>Choose the peer group you want to compare with.</SheetDescription>
+              </SheetHeader>
 
-          <button
-            onClick={() => setShowMoreFilters((v) => !v)}
-            aria-label={showMoreFilters ? 'Hide filters' : 'More filters'}
-            title={showMoreFilters ? 'Hide filters' : 'More filters'}
-            className={`relative flex items-center justify-center w-10 h-10 rounded-lg border transition flex-shrink-0 ${
-              showMoreFilters
-                ? 'border-[var(--action)] bg-[var(--paper)] text-[var(--action)]'
-                : 'border-[var(--line)] bg-[var(--surface)] text-[var(--ink-soft)] hover:border-[var(--action)] hover:text-[var(--action)]'
-            }`}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="w-5 h-5" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M7 12h10M10 18h4" />
-            </svg>
-            {!showMoreFilters && activeFilterCount > 0 && (
-              <span
-                data-testid="filter-count-badge"
-                className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[var(--action)] text-white text-[10px] font-bold flex items-center justify-center"
-              >
-                {activeFilterCount}
-              </span>
-            )}
-          </button>
+              <div className="flex-1 space-y-5 overflow-y-auto px-5 py-1">
+                <div>
+                  <Label htmlFor="stats-domain" className="mb-2">Domain</Label>
+                  <NativeSelect id="stats-domain" aria-label="Domain" value={domain} onChange={(e) => setDomain(e.target.value as Domain)}>
+                    <NativeSelectOption value="ai">{DOMAIN_LABELS.ai}</NativeSelectOption>
+                  </NativeSelect>
+                </div>
+
+                <div>
+                  <Label htmlFor="stats-designation" className="mb-2">Designation</Label>
+                  <NativeSelect id="stats-designation" aria-label="Designation" value={designation} onChange={(e) => setDesignation(e.target.value)}>
+                    <NativeSelectOption value="all">All designations</NativeSelectOption>
+                    {DESIGNATION_OPTIONS.map((opt) => <NativeSelectOption key={opt} value={opt}>{opt}</NativeSelectOption>)}
+                  </NativeSelect>
+                </div>
+
+                <div>
+                  <Label htmlFor="stats-experience" className="mb-2">Experience</Label>
+                  <NativeSelect id="stats-experience" aria-label="Experience" value={experience} onChange={(e) => setExperience(e.target.value)}>
+                    <NativeSelectOption value="all">All experience levels</NativeSelectOption>
+                    {EXPERIENCE_OPTIONS.map((opt) => <NativeSelectOption key={opt} value={opt}>{opt}</NativeSelectOption>)}
+                  </NativeSelect>
+                </div>
+
+              </div>
+
+              <SheetFooter className="border-t px-5 py-4">
+                <SheetClose asChild><Button>View comparison</Button></SheetClose>
+              </SheetFooter>
+            </SheetContent>
+          </Sheet>
         </div>
 
-        {showMoreFilters && (
-          <div
-            className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4 bg-[var(--surface)] rounded-lg border border-[var(--line)] p-4"
-            data-testid="more-filters"
-          >
-            <div>
-              <label htmlFor="stats-country" className="block text-sm font-medium text-[var(--ink)] mb-1">
-                Country
-              </label>
-              <select
-                id="stats-country"
-                aria-label="Country"
-                value={countryCode}
-                onChange={(e) => {
-                  setCountryCode(e.target.value)
-                  setStateCode('')
-                  setCity('')
-                }}
-                className="w-full border border-[var(--line)] rounded-lg pl-3 pr-8 py-2 text-sm bg-[var(--surface)]"
-              >
-                <option value="">All countries</option>
-                {Country.getAllCountries().map((c) => (
-                  <option key={c.isoCode} value={c.isoCode}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="stats-state" className="block text-sm font-medium text-[var(--ink)] mb-1">
-                State / Region
-              </label>
-              <select
-                id="stats-state"
-                aria-label="State or Region"
-                value={stateCode}
-                onChange={(e) => {
-                  setStateCode(e.target.value)
-                  setCity('')
-                }}
-                disabled={!countryCode}
-                className="w-full border border-[var(--line)] rounded-lg pl-3 pr-8 py-2 text-sm bg-[var(--surface)] disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <option value="">All states / regions</option>
-                {states.map((s) => (
-                  <option key={s.isoCode} value={s.isoCode}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="stats-city" className="block text-sm font-medium text-[var(--ink)] mb-1">
-                City
-              </label>
-              <select
-                id="stats-city"
-                aria-label="City"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                disabled={!stateCode}
-                className="w-full border border-[var(--line)] rounded-lg pl-3 pr-8 py-2 text-sm bg-[var(--surface)] disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <option value="">All cities</option>
-                {cities.map((c) => (
-                  <option key={c.name} value={c.name}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        )}
-
-        {/* Tabs — scrolls horizontally on narrow screens instead of overflowing
+        {/* Tabs â€” scrolls horizontally on narrow screens instead of overflowing
             the page, since the three labels don't fit ~340px-and-under widths.
             The right-edge mask fades the last tab into transparency instead of
             clipping it mid-word, so it reads as "swipe for more" rather than
             broken text. */}
-        <div
-          className="overflow-x-auto mb-4"
-          style={{
-            maskImage: 'linear-gradient(to right, black calc(100% - 20px), transparent)',
-            WebkitMaskImage: 'linear-gradient(to right, black calc(100% - 20px), transparent)',
-          }}
-        >
-          <div role="tablist" className="flex gap-1 border-b border-[var(--line)] w-max min-w-full">
+        <Tabs value={tab} onValueChange={(value) => setTab(value as Tab)} className="gap-4" id="benchmark-results">
+          <div className="overflow-x-auto overflow-y-hidden border-b [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <TabsList variant="line" className="h-9 min-w-max justify-start gap-5 px-0">
             {TABS.map((t) => (
-              <button
+              <TabsTrigger
                 key={t.id}
-                role="tab"
-                aria-selected={tab === t.id}
+                value={t.id}
                 onClick={() => setTab(t.id)}
-                className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition whitespace-nowrap flex-shrink-0 ${
-                  tab === t.id
-                    ? 'border-[var(--action)] text-[var(--action)]'
-                    : 'border-transparent text-[var(--ink-soft)] hover:text-[var(--ink)]'
-                }`}
+                className="h-9 flex-none rounded-none px-1.5 text-xs font-medium after:bottom-0 after:bg-[var(--signal)] sm:text-sm"
               >
                 {t.label}
-              </button>
+              </TabsTrigger>
             ))}
+          </TabsList>
           </div>
-        </div>
 
         {/* Community Insights */}
-        {tab === 'performance' && (
+        <TabsContent value="performance">
           <CommunityInsights
             domain={domain}
             loading={loading}
@@ -391,45 +250,45 @@ function StatsContent() {
             communityScope={communityScope}
             hasSpecificCommunity={hasSpecificCommunity}
           />
-        )}
+        </TabsContent>
 
         {/* Domain Overview */}
-        {tab === 'overview' && (
+        <TabsContent value="overview">
           <DomainOverview
             designation={designation}
             experience={experience}
-            country={countryName || 'all'}
-            state_region={stateName || 'all'}
-            city={city || 'all'}
+            country={LAUNCH_LOCATION.country}
+            state_region={LAUNCH_LOCATION.stateRegion}
+            city={LAUNCH_LOCATION.city}
           />
-        )}
+        </TabsContent>
 
         {/* Leaderboard */}
-        {tab === 'leaderboard' && (
+        <TabsContent value="leaderboard">
           <div>
-            <p className="text-sm text-[var(--ink-soft)] mb-4">Top scorers in {DOMAIN_LABELS[domain]}</p>
-            <div className="bg-[var(--surface)] rounded-lg border border-[var(--line)] shadow-sm p-4">
+            <p className="mb-4 text-sm text-muted-foreground">Top scorers in {DOMAIN_LABELS[domain]}</p>
+            <Card className="gap-0 py-0 shadow-sm"><CardContent className="p-4">
               <Leaderboard
                 domain={domain}
                 designation={designation}
                 experience={experience}
-                country={countryName || 'all'}
-                state_region={stateName || 'all'}
-                city={city || 'all'}
+                country={LAUNCH_LOCATION.country}
+                state_region={LAUNCH_LOCATION.stateRegion}
+                city={LAUNCH_LOCATION.city}
               />
-            </div>
+            </CardContent></Card>
           </div>
-        )}
-      </div>
-    </main>
+        </TabsContent>
+        </Tabs>
+      </main>
+    </DashboardShell>
   )
 }
 
 export default function StatsPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[var(--paper)]" />}>
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
       <StatsContent />
     </Suspense>
   )
 }
-

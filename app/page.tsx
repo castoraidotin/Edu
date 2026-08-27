@@ -4,6 +4,7 @@ import Link from 'next/link'
 import HomeSignupForm from '@/components/HomeSignupForm'
 import PageViewTracker from '@/components/analytics/PageViewTracker'
 import Logo from '@/components/Logo'
+import LogoutButton from '@/components/LogoutButton'
 import Reveal from '@/components/home/Reveal'
 import ScrollCta from '@/components/home/ScrollCta'
 import HowItWorksPreview from '@/components/home/HowItWorksPreview'
@@ -19,25 +20,38 @@ const DOMAIN_BLURBS: Record<Domain, string> = {
   data_science: 'ML, data pipelines, SQL, and visualization.',
 }
 
-export default async function Home() {
+interface HomeProps {
+  searchParams?: Promise<{ from?: string | string[] }>
+}
+
+export default async function Home({ searchParams }: HomeProps = {}) {
   const session = await auth()
-  if (session) redirect('/dashboard')
+  const params = searchParams ? await searchParams : undefined
+  const requestedFromComingSoon = params?.from === 'coming-soon'
+  if (session && !requestedFromComingSoon) redirect('/dashboard')
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--paper)]">
+    <div className="landing-light min-h-screen flex flex-col bg-[var(--paper)]">
       <PageViewTracker event="landing_viewed" />
       {/* Nav — scrolls away as the hero card takes over, unchanged from before */}
-      <header className="px-4 sm:px-8 py-4 bg-[var(--surface)] border-b border-[var(--line)] flex items-center justify-between">
+      <header className="flex items-center justify-between border-b border-[var(--line)] bg-[var(--surface)] px-4 py-4 sm:px-8">
         <Logo />
-        {/* Shorter label on phones so it never wraps against the logo;
-            full text restored from sm: up, unchanged from before. */}
-        <Link
-          href="/login"
-          className="text-sm font-medium text-[var(--action)] hover:text-[var(--action-hover)] transition-colors whitespace-nowrap"
-        >
-          <span className="sm:hidden">Sign in →</span>
-          <span className="hidden sm:inline">Sign in to your account →</span>
-        </Link>
+        {session ? (
+          <div className="flex items-center gap-3">
+            <span className="hidden max-w-56 truncate text-sm text-[var(--ink-soft)] sm:block">
+              {session.user?.email}
+            </span>
+            <LogoutButton />
+          </div>
+        ) : (
+          <Link
+            href="/login"
+            className="text-sm font-medium text-[var(--action)] hover:text-[var(--action-hover)] transition-colors whitespace-nowrap"
+          >
+            <span className="sm:hidden">Sign in →</span>
+            <span className="hidden sm:inline">Sign in to your account →</span>
+          </Link>
+        )}
       </header>
 
       {/* From lg: up, each section below is pinned full-screen and stacks

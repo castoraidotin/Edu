@@ -1,9 +1,12 @@
-import { auth } from '@/auth'
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { supabaseAdmin } from '@/lib/supabase-server'
+import { ArrowLeft } from 'lucide-react'
+import { auth } from '@/auth'
+import AppHeader from '@/components/AppHeader'
 import ProfileEditForm from './ProfileEditForm'
 import UserMenu from '@/components/UserMenu'
-import AppHeader from '@/components/AppHeader'
+import { Button } from '@/components/ui/button'
+import { supabaseAdmin } from '@/lib/supabase-server'
 
 export default async function ProfilePage() {
   const session = await auth()
@@ -16,20 +19,18 @@ export default async function ProfilePage() {
     .single()
 
   return (
-    <main className="min-h-screen bg-[var(--paper)]">
+    <main className="min-h-screen bg-background">
       <AppHeader right={<UserMenu />} />
+      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-12">
+        <Button asChild variant="ghost" size="sm" className="-ml-3 mb-7 text-muted-foreground">
+          <Link href="/dashboard"><ArrowLeft /> Back to dashboard</Link>
+        </Button>
 
-      <div className="max-w-xl mx-auto px-4 py-10">
-        {/* Back link — belongs in content, not the nav */}
-        <a
-          href="/dashboard"
-          className="inline-flex items-center gap-1 text-sm text-[var(--ink-soft)] hover:text-[var(--ink)] transition-colors mb-6"
-        >
-          ← Back to Dashboard
-        </a>
-
-        <h1 className="text-2xl font-bold text-[var(--ink)] mb-1">Your Profile</h1>
-        <p className="text-[var(--ink-soft)] text-sm mb-8">Update your information below</p>
+        <div className="mb-8">
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--signal)]">Account settings</p>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight">Your profile</h1>
+          <p className="mt-2 text-muted-foreground">Keep your benchmark context accurate as your role and experience evolve.</p>
+        </div>
 
         <ProfileEditForm
           initialValues={{

@@ -2,6 +2,7 @@
 
 import type { ClientQuestion, CorrectAnswer } from '@/lib/types'
 import { NO_SELECT_STYLE } from '@/lib/anti-cheat'
+import { Button } from '@/components/ui/button'
 
 interface QuizQuestionProps {
   question: ClientQuestion
@@ -47,22 +48,24 @@ export default function QuizQuestion({
           const isSelected = selected === key
 
           return (
-            <button
+            <Button
               key={key}
+              type="button"
+              variant="outline"
               onClick={() => onSelect(key)}
-              className={`w-full flex items-center gap-4 px-5 py-4 rounded-lg border-2 text-left transition-all group ${
+              className={`group h-auto min-h-16 w-full justify-start gap-4 whitespace-normal rounded-lg border-2 px-5 py-4 text-left shadow-none transition-all ${
                 isSelected
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-[var(--line)] bg-[var(--surface)] hover:border-[var(--action)]'
+                  ? 'border-blue-500 bg-accent text-foreground hover:bg-accent hover:text-foreground'
+                  : 'border-border bg-card text-foreground hover:border-primary/50 hover:bg-muted/40 hover:text-foreground'
               }`}
-              style={NO_SELECT_STYLE}
+              style={{ ...NO_SELECT_STYLE, borderColor: isSelected ? 'var(--signal)' : undefined }}
             >
               {/* Letter label — always visible */}
               <span
                 className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-mono font-bold text-sm ${
                   isSelected
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-[var(--paper)] text-[var(--ink-soft)] group-hover:bg-[var(--action)] group-hover:text-white'
+                    ? 'bg-[var(--signal)] text-white'
+                    : 'bg-muted text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground'
                 }`}
               >
                 {key}
@@ -80,7 +83,7 @@ export default function QuizQuestion({
               >
                 {optionText}
               </span>
-            </button>
+            </Button>
           )
         })}
       </div>

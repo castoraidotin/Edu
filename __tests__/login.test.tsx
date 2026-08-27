@@ -25,7 +25,10 @@ describe('LoginPage', () => {
   it('renders the login page with Google button and form', () => {
     render(<LoginPage />)
     expect(screen.getByText('Sign In')).toBeInTheDocument()
+    expect(screen.getByText('Sign in to start your assessment')).toBeInTheDocument()
     expect(screen.getByText('Continue with Google')).toBeInTheDocument()
+    expect(screen.getByText(/^or$/i)).toBeInTheDocument()
+    expect(screen.queryByText(/or use email/i)).not.toBeInTheDocument()
     expect(screen.getByPlaceholderText('you@example.com')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('••••••••')).toBeInTheDocument()
   })

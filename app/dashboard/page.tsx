@@ -1,21 +1,15 @@
-import { auth } from '@/auth'
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { supabaseAdmin } from '@/lib/supabase-server'
+import { requireProductAccess } from '@/lib/product-access-server'
 import DomainSelector from '@/components/DomainSelector'
-import UserMenu from '@/components/UserMenu'
-import AppHeader from '@/components/AppHeader'
+import DashboardShell from '@/components/dashboard/DashboardShell'
+import CastorPromoBanner from '@/components/dashboard/CastorPromoBanner'
 import ScoreGauge from '@/components/ui/ScoreGauge'
 import type { Domain } from '@/lib/types'
-import { ALL_DOMAINS, DOMAIN_LABELS_SHORT as DOMAIN_LABELS } from '@/lib/domains'
+import { DOMAIN_LABELS_SHORT as DOMAIN_LABELS } from '@/lib/domains'
 import { latestByKey } from '@/lib/latest-by-key'
-
-function getScoreTier(score: number) {
-  if (score >= 9) return { label: 'Excellent', color: '#15803D' }
-  if (score >= 7) return { label: 'Good', color: '#4338CA' }
-  if (score >= 5) return { label: 'Average', color: 'var(--signal)' }
-  return { label: 'Needs improvement', color: '#B42318' }
-}
+import { ArrowUpRight, BarChart3 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 interface ResultRow {
   domain: string
@@ -25,99 +19,99 @@ interface ResultRow {
 }
 
 export default async function DashboardPage() {
-  const session = await auth()
-  if (!session) redirect('/login')
+  const { session } = await requireProductAccess()
 
-  // Enforce profile completion — check DB directly so it's always current.
-  // Also check new location fields so existing users with the old location column
-  // are required to re-complete their profile with country/state/city.
-  const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('profile_completed, country, state_region, city')
-    .eq('email', session.user?.email)
-    .single()
-
-  const profileComplete =
-    profile?.profile_completed && profile?.country && profile?.state_region && profile?.city
-
-  if (!profileComplete) redirect('/profile/complete')
-
-  // Fetch this user's most recent attempt per domain
   const { data: rawResults } = await supabaseAdmin
     .from('test_results')
     .select('domain, score, time_taken_seconds, completed_at')
     .eq('user_email', session.user?.email)
     .order('completed_at', { ascending: false })
 
-  // Keep only the latest result per domain
   const latestByDomain: Partial<Record<Domain, ResultRow>> = Object.fromEntries(
     latestByKey((rawResults ?? []) as ResultRow[], (row) => row.domain as Domain)
   )
 
-  const hasAnyResult = Object.keys(latestByDomain).length > 0
+  const completedResults = Object.values(latestByDomain).filter(
+    (result): result is ResultRow => Boolean(result)
+  )
+  const hasAnyResult = completedResults.length > 0
 
   return (
-    <main className="min-h-screen bg-[var(--paper)]">
-      <AppHeader right={<UserMenu />} />
-
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        {/* Welcome header */}
-        <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold text-[var(--ink)] mb-2">
-            Welcome, {session.user?.name?.split(' ')[0] ?? session.user?.email}!
-          </h1>
-          <p className="text-[var(--ink-soft)]">Select a domain to begin your assessment</p>
-        </div>
-
-        {/* Domain selector */}
-        <DomainSelector />
-
-        {/* Results history */}
-        {hasAnyResult && (
-          <div className="mt-14">
-            <h2 className="text-xs font-semibold uppercase tracking-widest text-[var(--ink-soft)] pb-3 mb-5 border-b border-[var(--line)]">
-              Your Results
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {ALL_DOMAINS.map((domain) => {
-                const result = latestByDomain[domain]
-                if (!result) return null
-                const mins = Math.floor(result.time_taken_seconds / 60)
-                const secs = result.time_taken_seconds % 60
-                const { label, color } = getScoreTier(result.score)
-                return (
-                  <Link
-                    href={`/stats?domain=${domain}`}
-                    key={domain}
-                    className="block bg-[var(--surface)] rounded-lg border border-[var(--line)] p-5 hover:border-gray-300 transition-colors"
-                  >
-                    <p className="text-xs font-medium text-[var(--ink-soft)] mb-2 uppercase tracking-wide">
-                      {DOMAIN_LABELS[domain]}
-                    </p>
-                    <div className="flex items-baseline gap-1.5 mb-3">
-                      <span className="font-mono text-4xl font-bold text-[var(--ink)]">
-                        {result.score}
-                      </span>
-                      <span className="text-sm font-medium text-[var(--ink-soft)]">/ 10</span>
-                    </div>
-                    <ScoreGauge score={result.score} />
-                    <p className="text-xs text-[var(--ink-soft)] mt-3">
-                      Completed in {mins > 0 ? `${mins}m ${secs}s` : `${secs}s`} &middot;{' '}
-                      {new Date(result.completed_at).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                      })}
-                    </p>
-                    <div className="mt-2 text-xs font-semibold" style={{ color }}>
-                      {label}
-                    </div>
-                  </Link>
-                )
-              })}
+    <DashboardShell>
+      <div className="mx-auto w-full max-w-[1532px] px-4 py-7 sm:px-6 sm:py-9 lg:px-8">
+        <CastorPromoBanner />
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.65fr)_minmax(320px,0.75fr)] lg:items-start">
+          <section id="assessments" className="scroll-mt-24">
+            <div className="mb-5">
+              <h2 className="text-2xl font-semibold tracking-tight">Assessments</h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Start with AI &amp; Generative AI. More assessment domains are on the way.
+              </p>
             </div>
-          </div>
-        )}
+            <DomainSelector />
+          </section>
+
+          <aside className="lg:sticky lg:top-24">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold tracking-tight">Latest results</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Your most recent score in each domain.</p>
+              </div>
+              {hasAnyResult && (
+                <Button asChild variant="ghost" size="sm" className="-mr-2 shrink-0 text-muted-foreground hover:text-foreground">
+                  <Link href="/stats">View insights <ArrowUpRight /></Link>
+                </Button>
+              )}
+            </div>
+
+            {hasAnyResult ? (
+              <div className="grid gap-2.5">
+                {completedResults.map((result) => {
+                  const domain = result.domain as Domain
+                  const mins = Math.floor(result.time_taken_seconds / 60)
+                  const secs = result.time_taken_seconds % 60
+
+                  return (
+                    <Link
+                      href={`/stats?domain=${domain}`}
+                      key={domain}
+                      className="group rounded-xl border bg-card px-4 py-4 shadow-xs transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-[var(--signal)]/35 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold">{DOMAIN_LABELS[domain]}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {new Date(result.completed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            <span aria-hidden="true"> · </span>
+                            {mins > 0 ? `${mins}m ${secs}s` : `${secs}s`}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-2.5">
+                          <p className="font-mono text-xl font-semibold leading-none">
+                            {result.score}<span className="text-xs font-medium text-muted-foreground">/10</span>
+                          </p>
+                          <ArrowUpRight className="size-4 text-muted-foreground transition-colors group-hover:text-[var(--signal)]" />
+                        </div>
+                      </div>
+                      <div className="mt-3">
+                        <ScoreGauge score={result.score} />
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed bg-card/45 p-5">
+                <BarChart3 className="size-5 text-muted-foreground" />
+                <p className="mt-4 text-sm font-medium">No results yet</p>
+                <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
+                  Your latest scores will appear here after your first assessment.
+                </p>
+              </div>
+            )}
+          </aside>
+        </div>
       </div>
-    </main>
+    </DashboardShell>
   )
 }
