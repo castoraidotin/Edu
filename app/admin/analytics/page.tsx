@@ -60,7 +60,12 @@ export default async function AdminAnalyticsPage() {
           <>
             <p className="mb-7 mt-2 text-muted-foreground">
               Last {summary.windowDays} days · {summary.uniqueVisitors} unique visitors ({summary.totalEvents} events)
-              {summary.averageQuizScore !== null && <> · avg quiz score {summary.averageQuizScore.toFixed(1)}/10</>}
+              {summary.averageQuizScore !== null && (
+                <>
+                  {' '}· avg quiz score {summary.averageQuizScore.toFixed(1)}/10 across{' '}
+                  {summary.quizCompletionCount} completions, all domains combined
+                </>
+              )}
             </p>
 
             <Card className="mb-6 gap-0 py-0 shadow-sm">
