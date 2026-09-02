@@ -39,7 +39,7 @@ const defaultProps = {
     state_region: 'Telangana',
     city: 'Hyderabad',
     years_of_experience: '5-10 years',
-    designation: 'Data Scientist',
+    designation: 'Tech',
     linkedin_url: '',
   },
 }
@@ -53,60 +53,48 @@ describe('ProfileEditForm', () => {
     expect(screen.getByText('jane@example.com')).toBeInTheDocument()
   })
 
-  it('renders designation as a dropdown', () => {
+  it('renders Tech / Non-Tech as a dropdown', () => {
     render(<ProfileEditForm {...defaultProps} />)
-    const select = screen.getByLabelText('Designation') as HTMLSelectElement
+    const select = screen.getByLabelText('Tech or Non-Tech') as HTMLSelectElement
     expect(select.tagName).toBe('SELECT')
   })
 
-  it('pre-selects designation from initialValues when it matches an option', () => {
+  it('pre-selects the background from initialValues when it matches an option', () => {
     render(<ProfileEditForm {...defaultProps} />)
-    const select = screen.getByLabelText('Designation') as HTMLSelectElement
-    expect(select.value).toBe('Data Scientist')
+    const select = screen.getByLabelText('Tech or Non-Tech') as HTMLSelectElement
+    expect(select.value).toBe('Tech')
   })
 
   it('shows empty selection when initialValues designation does not match any option', () => {
     render(<ProfileEditForm {...defaultProps} initialValues={{ ...defaultProps.initialValues, designation: 'Custom Old Value' }} />)
-    const select = screen.getByLabelText('Designation') as HTMLSelectElement
+    const select = screen.getByLabelText('Tech or Non-Tech') as HTMLSelectElement
     expect(select.value).toBe('')
   })
 
-  it('renders all 12 designation options plus placeholder', () => {
+  it('renders only Tech and Non-Tech plus the placeholder', () => {
     render(<ProfileEditForm {...defaultProps} />)
-    const select = screen.getByLabelText('Designation') as HTMLSelectElement
+    const select = screen.getByLabelText('Tech or Non-Tech') as HTMLSelectElement
     const options = Array.from(select.options).map((o) => o.value)
-    expect(options).toContain('Software Engineer / Developer')
-    expect(options).toContain('Full-Stack Developer')
-    expect(options).toContain('Data Scientist')
-    expect(options).toContain('Cloud Architect / Engineer')
-    expect(options).toContain('DevOps Engineer')
-    expect(options).toContain('Cybersecurity Specialist')
-    expect(options).toContain('AI / Machine Learning Engineer')
-    expect(options).toContain('UI/UX Designer')
-    expect(options).toContain('IT Project Manager')
-    expect(options).toContain('Product Owner')
-    expect(options).toContain('Business Analyst')
-    expect(options).toContain('Other')
-    expect(options).toHaveLength(13)
+    expect(options).toEqual(['', 'Tech', 'Non-Tech'])
   })
 
-  it('updates designation when user selects a new option', () => {
+  it('updates background when the user selects a new option', () => {
     render(<ProfileEditForm {...defaultProps} />)
-    const select = screen.getByLabelText('Designation') as HTMLSelectElement
-    fireEvent.change(select, { target: { value: 'DevOps Engineer' } })
-    expect(select.value).toBe('DevOps Engineer')
+    const select = screen.getByLabelText('Tech or Non-Tech') as HTMLSelectElement
+    fireEvent.change(select, { target: { value: 'Non-Tech' } })
+    expect(select.value).toBe('Non-Tech')
   })
 
-  it('calls PATCH /api/profile with selected designation on submit', async () => {
+  it('stores the selected background in the existing designation field', async () => {
     mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ success: true }) })
     render(<ProfileEditForm {...defaultProps} />)
-    fireEvent.change(screen.getByLabelText('Designation'), { target: { value: 'DevOps Engineer' } })
+    fireEvent.change(screen.getByLabelText('Tech or Non-Tech'), { target: { value: 'Non-Tech' } })
     fireEvent.click(screen.getByRole('button', { name: /save changes/i }))
 
     await waitFor(() => {
       const [, options] = mockFetch.mock.calls[0]
       const body = JSON.parse(options.body)
-      expect(body.designation).toBe('DevOps Engineer')
+      expect(body.designation).toBe('Non-Tech')
     })
   })
 

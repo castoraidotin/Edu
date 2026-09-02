@@ -34,27 +34,38 @@ export default function SignupPage() {
     setLoading(true)
     setError('')
 
-    const res = await fetch('/api/auth/signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ firstName, lastName, email, password }),
-    })
-    const data = await res.json()
-
-    if (!res.ok) {
-      setError(data.error || 'Something went wrong')
+    let accountCreated = false
+    try {
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ firstName, lastName, email, password }),
+      })
+      accountCreated = res.ok
+      if (!res.ok) {
+        const data = await res.json()
+        setError(data.error || 'Something went wrong')
+        return
+      }
+      const result = await signIn('credentials', { email, password, redirect: false })
+      router.push(!result || result.error ? '/login' : '/profile/complete')
+    } catch {
+      // Once registration succeeds, retry login instead of creating a duplicate account.
+      if (accountCreated) router.push('/login')
+      else setError('Could not create your account. Please check your connection and try again.')
+    } finally {
       setLoading(false)
-      return
     }
-
-    const result = await signIn('credentials', { email, password, redirect: false })
-    setLoading(false)
-    router.push(result?.error ? '/login' : '/dashboard')
   }
 
-  function handleGoogleSignup() {
+  async function handleGoogleSignup() {
     trackEvent('signup_started', { method: 'google', location: 'signup_page' })
-    signIn('google', { callbackUrl: '/dashboard' })
+    setError('')
+    try {
+      await signIn('google', { callbackUrl: '/profile/complete' })
+    } catch {
+      setError('Could not open Google sign-in. Please try again.')
+    }
   }
 
   return (

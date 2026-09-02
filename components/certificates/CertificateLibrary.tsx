@@ -61,6 +61,8 @@ export default function CertificateLibrary({ recipientName, items }: Certificate
           score={selectedItem.certificate.score}
           attemptId={selectedItem.certificate.attemptId}
           completedAt={selectedItem.certificate.completedAt}
+          topPercent={selectedItem.certificate.topPercent}
+          city={selectedItem.certificate.city}
         />
       ) : (
         <div className="rounded-xl border border-dashed bg-card/45 px-5 py-12 text-center sm:px-8">

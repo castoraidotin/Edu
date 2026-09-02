@@ -318,7 +318,7 @@ export async function GET(req: NextRequest) {
     // (your country's) crowd, not just the ones who also happen to match
     // whatever Designation/Experience/City/State filters are active.
     peerGroupRanks: buildPeerGroupRanks(countryEntries, session.user.email, [
-      { dimension: 'Role', getLabel: (entry) => entry.profile.designation },
+      { dimension: 'Background', getLabel: (entry) => entry.profile.designation },
       { dimension: 'Experience', getLabel: (entry) => entry.profile.years_of_experience },
     ]),
     topCitiesByScore: buildTopCities(cityGroupsByScore, userCity, LEADERBOARD_SIZE),

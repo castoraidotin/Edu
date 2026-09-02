@@ -1,5 +1,6 @@
 import { ImageResponse } from 'next/og'
 import { getCertificateData } from '@/lib/certificate-data'
+import { certificateAchievementText } from '@/lib/certificate-share'
 
 export const alt = 'Edu by Castor AI assessment completion certificate'
 export const size = { width: 1200, height: 630 }
@@ -14,7 +15,6 @@ export default async function OpenGraphCertificateImage({
   const { attemptId } = await params
   const certificate = await getCertificateData(attemptId)
   const recipientName = certificate?.recipientName ?? 'AI learner'
-  const score = certificate?.score ?? 0
   const completedAt = certificate?.completedAt
     ? new Date(certificate.completedAt).toLocaleDateString('en-US', {
         month: 'long',
@@ -23,6 +23,7 @@ export default async function OpenGraphCertificateImage({
       })
     : 'On completion'
   const certificateId = `EDU-AI-${attemptId.replace(/-/g, '').slice(0, 10).toUpperCase()}`
+  const achievementText = certificateAchievementText(certificate?.topPercent)
 
   return new ImageResponse(
     (
@@ -77,10 +78,7 @@ export default async function OpenGraphCertificateImage({
             <div style={{ marginTop: 20, fontSize: 16 }}>Awarded to</div>
             <div style={{ marginTop: 8, fontFamily: 'serif', fontSize: 48, color: '#27925a' }}>{recipientName}</div>
             <div style={{ marginTop: 17, display: 'flex', flexDirection: 'column', alignItems: 'center', fontSize: 16, lineHeight: 1.35 }}>
-              <div>For completing the assessment “Artificial Intelligence &amp; Generative AI”</div>
-              <div style={{ display: 'flex' }}>
-                with a score of&nbsp;<strong>{score}/10</strong>&nbsp;on&nbsp;<strong>{completedAt}</strong>
-              </div>
+              <div style={{ maxWidth: 610, textAlign: 'center' }}>{achievementText}</div>
             </div>
 
             <div style={{ position: 'absolute', left: 54, bottom: 38, display: 'flex', flexDirection: 'column', alignItems: 'center', color: '#6f7c76' }}>

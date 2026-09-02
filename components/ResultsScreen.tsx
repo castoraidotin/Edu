@@ -6,7 +6,7 @@ import type { CertificateSummary, Domain } from '@/lib/types'
 import { DOMAIN_LABELS } from '@/lib/domains'
 import { PROMO_BRAND_NAME } from '@/lib/promo'
 import { trackEvent } from '@/lib/analytics'
-import { RotateCcw } from 'lucide-react'
+import { ArrowDown, RotateCcw, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import CompletionCertificate from '@/components/CompletionCertificate'
@@ -101,6 +101,17 @@ export default function ResultsScreen({
 
   return (
     <main className="relative isolate min-h-screen bg-background">
+      {domain === 'ai' && certificate && (
+        <a
+          href="#completion-certificate"
+          data-testid="certificate-scroll-prompt"
+          className="fixed right-4 top-4 z-50 flex items-center gap-2 rounded-full bg-[var(--action)] px-4 py-3 text-sm font-semibold text-white shadow-xl shadow-slate-900/20 transition-[background-color,transform] hover:-translate-y-0.5 hover:bg-[var(--action-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--signal)]/50 sm:right-6 sm:top-6"
+        >
+          <ArrowDown className="size-4" />
+          Scroll down to view your certificate.
+        </a>
+      )}
+
       <section
         className={`relative z-0 flex min-h-screen items-center justify-center px-4 py-8 sm:py-12 ${
           domain === 'ai' ? 'results-stack-score' : ''
@@ -186,6 +197,14 @@ export default function ResultsScreen({
             >
               Dashboard
             </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => router.push(`/stats?domain=${domain}`)}
+              className="results-insights-button flex-1"
+            >
+              <Sparkles aria-hidden="true" /> Insights
+            </Button>
           </div>
 
         </div>
@@ -202,6 +221,8 @@ export default function ResultsScreen({
                 score={certificate.score}
                 attemptId={certificate.attemptId}
                 completedAt={certificate.completedAt}
+                topPercent={certificate.topPercent}
+                city={certificate.city}
               />
           </div>
         </section>

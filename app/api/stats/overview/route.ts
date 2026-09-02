@@ -8,10 +8,6 @@ import { isRateLimited } from '@/lib/rate-limit'
 import { latestResultsForAllDomains } from '@/lib/latest-results'
 import { latestByKey } from '@/lib/latest-by-key'
 
-// Cap on how many result rows we pull before aggregating in memory — keeps a
-// single request from pulling an unbounded table scan across every domain.
-const RESULTS_QUERY_LIMIT = 5000
-
 // Minimum number of distinct users a per-domain breakdown must contain before
 // we're willing to report its aggregate numbers back to the client. Prevents a
 // narrow profile filter from de-anonymizing one or two real people.

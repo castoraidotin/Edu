@@ -59,7 +59,7 @@ describe('SignupPage', () => {
     mockSignIn.mockResolvedValueOnce({})
     render(<SignupPage />)
     fireEvent.click(screen.getByRole('button', { name: /continue with google/i }))
-    expect(mockSignIn).toHaveBeenCalledWith('google', { callbackUrl: '/dashboard' })
+    expect(mockSignIn).toHaveBeenCalledWith('google', { callbackUrl: '/profile/complete' })
   })
 
   it('shows error message returned from API', async () => {
@@ -79,7 +79,7 @@ describe('SignupPage', () => {
     })
   })
 
-  it('calls signIn after successful signup and redirects to dashboard', async () => {
+  it('calls signIn after successful signup and opens profile completion', async () => {
     const push = jest.fn()
     mockUseRouter.mockReturnValue({ push })
     mockFetch.mockResolvedValueOnce({
@@ -101,7 +101,7 @@ describe('SignupPage', () => {
         password: 'password123',
         redirect: false,
       })
-      expect(push).toHaveBeenCalledWith('/dashboard')
+      expect(push).toHaveBeenCalledWith('/profile/complete')
     })
   })
 

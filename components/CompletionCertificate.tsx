@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card'
 import {
   CERTIFICATE_SHARE_TEXT,
   CERTIFICATE_TITLE,
+  certificateAchievementText,
   certificateShareUrl,
 } from '@/lib/certificate-share'
 
@@ -17,6 +18,8 @@ interface CompletionCertificateProps {
   score: number
   attemptId?: string | null
   completedAt?: string
+  topPercent?: number | null
+  city?: string | null
 }
 
 type SharePlatform = 'linkedin' | 'x' | 'facebook'
@@ -89,22 +92,15 @@ async function copyShareText(text: string) {
 
 export default function CompletionCertificate({
   recipientName,
-  score,
   attemptId,
   completedAt,
+  topPercent,
 }: CompletionCertificateProps) {
   const certificateRef = useRef<HTMLDivElement>(null)
   const [isExporting, setIsExporting] = useState(false)
   const [status, setStatus] = useState<ExportStatus>(null)
   const displayName = recipientName?.trim() || 'AI learner'
   const certificateNameSize = Math.max(2.6, Math.min(6.1, 155 / Array.from(displayName).length))
-  const issuedDateLabel = completedAt
-    ? new Date(completedAt).toLocaleDateString('en-US', {
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
-      })
-    : 'Issued on completion'
   const issuedDateShort = completedAt
     ? new Date(completedAt).toLocaleDateString('en-GB', {
         day: '2-digit',
@@ -114,6 +110,7 @@ export default function CompletionCertificate({
     : 'On completion'
   const issuedYear = completedAt ? new Date(completedAt).getFullYear() : new Date().getFullYear()
   const credentialId = `EDU-AI-${(attemptId ?? 'COMPLETED').replace(/-/g, '').slice(0, 10).toUpperCase()}`
+  const achievementText = certificateAchievementText(topPercent)
   const caption = CERTIFICATE_SHARE_TEXT
   const shareUrl = certificateShareUrl(attemptId)
   // Version the social URL so LinkedIn/Facebook re-scrape metadata after the
@@ -280,9 +277,7 @@ export default function CompletionCertificate({
                 </h3>
 
                 <p className="absolute left-1/2 top-[56.5%] w-[72%] -translate-x-1/2 text-center text-[clamp(7px,1.65cqw,19px)] leading-[1.25] text-[#222a26]">
-                  For completing the assessment “Artificial Intelligence &amp; Generative AI”
-                  <br />
-                  with a score of <span className="font-semibold">{score}/10</span> on <span className="font-semibold">{issuedDateLabel}</span>
+                  {achievementText}
                 </p>
 
                 <div className="absolute bottom-[9.2%] left-[17%] flex w-[15%] flex-col items-center text-center">

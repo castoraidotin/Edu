@@ -13,12 +13,17 @@ jest.mock('@/lib/supabase-server', () => ({
     from: jest.fn(),
   },
 }))
+jest.mock('@/lib/latest-results', () => ({
+  latestResultsForDomain: jest.fn(),
+}))
 
 import { auth } from '@/auth'
 import { supabaseAdmin } from '@/lib/supabase-server'
+import { latestResultsForDomain } from '@/lib/latest-results'
 
 const mockAuth = auth as jest.Mock
 const mockFrom = supabaseAdmin.from as jest.Mock
+const mockLatestResultsForDomain = latestResultsForDomain as jest.Mock
 
 function makeRequest(body: object) {
   return new NextRequest('http://localhost/api/results', {
@@ -198,6 +203,15 @@ describe('POST /api/results', () => {
     // queue intact, and an early-return test (e.g. attempt not found) would
     // leak leftover impls into the next test's .from() calls.
     jest.resetAllMocks()
+    mockLatestResultsForDomain.mockResolvedValue({
+      data: [
+        { user_email: 'test@test.com', score: 8, time_taken_seconds: 100, completed_at: '2026-08-20' },
+        { user_email: 'higher@test.com', score: 10, time_taken_seconds: 100, completed_at: '2026-08-20' },
+        { user_email: 'lower-a@test.com', score: 4, time_taken_seconds: 100, completed_at: '2026-08-20' },
+        { user_email: 'lower-b@test.com', score: 2, time_taken_seconds: 100, completed_at: '2026-08-20' },
+      ],
+      error: null,
+    })
   })
 
   it('returns 401 when not authenticated', async () => {
@@ -214,7 +228,7 @@ describe('POST /api/results', () => {
 
   it('returns 400 when attempt_id is missing', async () => {
     mockAuth.mockResolvedValue({ user: { email: 'test@test.com' } })
-    const { attempt_id: _, ...noAttempt } = validPayload
+    const noAttempt = { domain: validPayload.domain, answers: validPayload.answers }
     const res = await POST(makeRequest(noAttempt))
     expect(res.status).toBe(400)
     expect((await res.json()).error).toBe('Invalid quiz attempt')
@@ -304,6 +318,22 @@ describe('POST /api/results', () => {
         }),
       }))
       .mockImplementationOnce(() => certificateQuery)
+      .mockImplementationOnce((table: string) => {
+        expect(table).toBe('profiles')
+        return {
+          select: jest.fn().mockReturnValue({
+            in: jest.fn().mockResolvedValue({
+              data: [
+                { email: 'test@test.com', city: 'Hyderabad' },
+                { email: 'higher@test.com', city: 'Hyderabad' },
+                { email: 'lower-a@test.com', city: 'Hyderabad' },
+                { email: 'lower-b@test.com', city: 'Hyderabad' },
+              ],
+              error: null,
+            }),
+          }),
+        }
+      })
 
     const res = await POST(makeRequest({ ...validPayload, domain: 'ai' }))
     expect(res.status).toBe(200)
@@ -313,6 +343,9 @@ describe('POST /api/results', () => {
         attemptId: firstAttemptId,
         score: 5,
         completedAt: '2026-08-01T10:00:00.000Z',
+        topPercent: 50,
+        cohortSize: 4,
+        city: 'Hyderabad',
       },
     })
   })
@@ -401,7 +434,7 @@ describe('POST /api/results', () => {
 
   it('returns 400 when answers field is missing', async () => {
     mockAuth.mockResolvedValue({ user: { email: 'test@test.com' } })
-    const { answers: _, ...noAnswers } = validPayload
+    const noAnswers = { domain: validPayload.domain, attempt_id: validPayload.attempt_id }
     const res = await POST(makeRequest(noAnswers))
     expect(res.status).toBe(400)
     expect((await res.json()).error).toBe('Invalid answers')

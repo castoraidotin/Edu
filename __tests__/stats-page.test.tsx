@@ -61,8 +61,8 @@ function statsBody(overrides: Record<string, unknown> = {}) {
     ],
     peerGroupRanks: [
       {
-        dimension: 'Role',
-        label: 'Software Engineer / Developer',
+        dimension: 'Background',
+        label: 'Tech',
         rank: 2,
         percentile: 75,
         cohortSize: 5,
@@ -198,7 +198,7 @@ describe('StatsPage', () => {
     expect(screen.getByRole('tab', { name: 'Community Insights' })).toHaveAttribute('aria-selected', 'true')
     openMoreFilters()
     expect(screen.getByLabelText('Domain')).toBeInTheDocument()
-    expect(screen.getByLabelText('Designation')).toBeInTheDocument()
+    expect(screen.getByLabelText('Tech or Non-Tech')).toBeInTheDocument()
     expect(screen.getByLabelText('Experience')).toBeInTheDocument()
     await waitForCommunityInsights()
   })
@@ -251,6 +251,23 @@ describe('StatsPage', () => {
     expect(screen.queryByText('Recent attempts')).not.toBeInTheDocument()
   })
 
+  it('places community overview, peer groups, and around-your-rank before score trend', async () => {
+    installFetchMock()
+    render(<StatsPage />)
+    await waitForCommunityInsights()
+
+    const distribution = screen.getByTestId('score-distribution-tile')
+    const snapshot = screen.getByTestId('community-snapshot-tile')
+    const peerGroups = screen.getByTestId('peer-groups-tile')
+    const neighbors = screen.getByTestId('neighbors-tile')
+    const trend = screen.getByTestId('score-trend')
+
+    expect(distribution.compareDocumentPosition(trend) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(snapshot.compareDocumentPosition(trend) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(peerGroups.compareDocumentPosition(trend) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(neighbors.compareDocumentPosition(trend) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
   it("shows the hero row's tests taken, average score, best score, and percentile", async () => {
     installFetchMock()
     render(<StatsPage />)
@@ -278,7 +295,7 @@ describe('StatsPage', () => {
     render(<StatsPage />)
     await waitFor(() => expect(screen.getByTestId('peer-groups-tile')).toBeInTheDocument())
     const peerGroups = screen.getByTestId('peer-groups-tile')
-    expect(peerGroups).toHaveTextContent('Software Engineer / Developer')
+    expect(peerGroups).toHaveTextContent('Tech')
     expect(peerGroups).toHaveTextContent('#2')
     expect(peerGroups).not.toHaveTextContent('Country')
     expect(peerGroups).not.toHaveTextContent('India')
@@ -341,14 +358,14 @@ describe('StatsPage', () => {
     await flushMicrotasks()
   })
 
-  it('refetches when the designation dropdown changes', async () => {
+  it('refetches when the Tech / Non-Tech dropdown changes', async () => {
     installFetchMock()
     render(<StatsPage />)
     await waitFor(() => expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('domain=ai')))
     openMoreFilters()
-    fireEvent.change(screen.getByLabelText('Designation'), { target: { value: 'Data Scientist' } })
+    fireEvent.change(screen.getByLabelText('Tech or Non-Tech'), { target: { value: 'Tech' } })
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('designation=Data+Scientist'))
+      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('designation=Tech'))
     })
     await flushMicrotasks()
   })
@@ -385,7 +402,7 @@ describe('StatsPage', () => {
     render(<StatsPage />)
     await waitFor(() => expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('domain=ai')))
     openMoreFilters()
-    fireEvent.change(screen.getByLabelText('Designation'), { target: { value: 'Data Scientist' } })
+    fireEvent.change(screen.getByLabelText('Tech or Non-Tech'), { target: { value: 'Tech' } })
     fireEvent.click(screen.getByRole('button', { name: /view comparison/i }))
     expect(screen.getByRole('button', { name: /more filters/i })).toBeInTheDocument()
     expect(screen.getByTestId('filter-count-badge')).toHaveTextContent('1')
@@ -445,7 +462,7 @@ describe('StatsPage', () => {
     await waitFor(() => expect(screen.getByTestId('domain-overview')).toBeInTheDocument())
     expect(screen.getByRole('button', { name: /more filters/i })).toBeInTheDocument()
     openMoreFilters()
-    expect(screen.getByLabelText('Designation')).toBeInTheDocument()
+    expect(screen.getByLabelText('Tech or Non-Tech')).toBeInTheDocument()
     expect(screen.getByLabelText('Experience')).toBeInTheDocument()
   })
 
@@ -458,7 +475,7 @@ describe('StatsPage', () => {
     await waitFor(() => expect(screen.getByText(/Top scorers in/)).toBeInTheDocument())
     expect(screen.getByRole('button', { name: /more filters/i })).toBeInTheDocument()
     openMoreFilters()
-    expect(screen.getByLabelText('Designation')).toBeInTheDocument()
+    expect(screen.getByLabelText('Tech or Non-Tech')).toBeInTheDocument()
     expect(screen.getByLabelText('Experience')).toBeInTheDocument()
   })
 
@@ -468,14 +485,14 @@ describe('StatsPage', () => {
     await waitForCommunityInsights()
 
     openMoreFilters()
-    fireEvent.change(screen.getByLabelText('Designation'), { target: { value: 'Data Scientist' } })
+    fireEvent.change(screen.getByLabelText('Tech or Non-Tech'), { target: { value: 'Tech' } })
     fireEvent.change(screen.getByLabelText('Experience'), { target: { value: '5-10 years' } })
     fireEvent.click(screen.getByRole('button', { name: /view comparison/i }))
     fireEvent.click(screen.getByRole('tab', { name: 'Domain Overview' }))
 
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringMatching(/\/api\/stats\/overview\?.*designation=Data\+Scientist/)
+        expect.stringMatching(/\/api\/stats\/overview\?.*designation=Tech/)
       )
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringMatching(/\/api\/stats\/overview\?.*experience=5-10\+years/)
@@ -490,13 +507,13 @@ describe('StatsPage', () => {
     await waitForCommunityInsights()
 
     openMoreFilters()
-    fireEvent.change(screen.getByLabelText('Designation'), { target: { value: 'Data Scientist' } })
+    fireEvent.change(screen.getByLabelText('Tech or Non-Tech'), { target: { value: 'Tech' } })
     fireEvent.click(screen.getByRole('button', { name: /view comparison/i }))
     fireEvent.click(screen.getByRole('tab', { name: 'Leaderboard' }))
 
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringMatching(/\/api\/stats\/leaderboard\?.*designation=Data\+Scientist/)
+        expect.stringMatching(/\/api\/stats\/leaderboard\?.*designation=Tech/)
       )
     })
     await flushMicrotasks()

@@ -134,6 +134,8 @@ describe('TestPage', () => {
             attemptId: '11111111-1111-4111-8111-111111111111',
             score: 4,
             completedAt: '2026-08-01T10:00:00.000Z',
+            topPercent: 40,
+            city: 'Hyderabad',
           },
         }),
       })
@@ -144,8 +146,10 @@ describe('TestPage', () => {
     for (let i = 0; i < 10; i++) answerAndAdvance()
 
     await waitFor(() => expect(screen.getByText('Your benchmark')).toBeInTheDocument())
-    expect(screen.getByTestId('ai-completion-certificate')).toHaveTextContent('4/10')
-    expect(screen.getByTestId('ai-completion-certificate')).toHaveTextContent('Test Learner')
+    const certificate = screen.getByTestId('ai-completion-certificate')
+    expect(certificate).toHaveTextContent('Test Learner')
+    expect(certificate).toHaveTextContent(/ranking among the top 40% of all test-takers\./i)
+    expect(certificate).not.toHaveTextContent('4/10')
   })
 
   describe('Try again resets state for a same-domain retake', () => {

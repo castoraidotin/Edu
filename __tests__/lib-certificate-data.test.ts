@@ -3,11 +3,16 @@
 jest.mock('@/lib/supabase-server', () => ({
   supabaseAdmin: { from: jest.fn() },
 }))
+jest.mock('@/lib/latest-results', () => ({
+  latestResultsForDomain: jest.fn(),
+}))
 
 import { getCertificateData, getFirstCertificateForUser } from '@/lib/certificate-data'
 import { supabaseAdmin } from '@/lib/supabase-server'
+import { latestResultsForDomain } from '@/lib/latest-results'
 
 const mockFrom = supabaseAdmin.from as jest.Mock
+const mockLatestResultsForDomain = latestResultsForDomain as jest.Mock
 const FIRST_ATTEMPT_ID = '11111111-1111-4111-8111-111111111111'
 const RETAKE_ATTEMPT_ID = '22222222-2222-4222-8222-222222222222'
 
@@ -22,8 +27,34 @@ function queryResult(data: unknown, error: unknown = null) {
   }
 }
 
+function profileListQuery(data: unknown, error: unknown = null) {
+  return {
+    select: jest.fn().mockReturnValue({
+      in: jest.fn().mockResolvedValue({ data, error }),
+    }),
+  }
+}
+
+const HYDERABAD_PROFILES = [
+  { email: 'learner@example.com', city: 'Hyderabad' },
+  { email: 'higher@example.com', city: 'Hyderabad' },
+  { email: 'lower-a@example.com', city: 'Hyderabad' },
+  { email: 'lower-b@example.com', city: 'Mumbai' },
+]
+
 describe('certificate data', () => {
-  beforeEach(() => jest.clearAllMocks())
+  beforeEach(() => {
+    jest.resetAllMocks()
+    mockLatestResultsForDomain.mockResolvedValue({
+      data: [
+        { user_email: 'learner@example.com', score: 9, time_taken_seconds: 100, completed_at: '2026-08-20' },
+        { user_email: 'higher@example.com', score: 10, time_taken_seconds: 100, completed_at: '2026-08-20' },
+        { user_email: 'lower-a@example.com', score: 4, time_taken_seconds: 100, completed_at: '2026-08-20' },
+        { user_email: 'lower-b@example.com', score: 2, time_taken_seconds: 100, completed_at: '2026-08-20' },
+      ],
+      error: null,
+    })
+  })
 
   it('locks the certificate to the earliest completed AI result', async () => {
     const query = queryResult({
@@ -32,12 +63,17 @@ describe('certificate data', () => {
       score: 6,
       completed_at: '2026-08-01T10:00:00.000Z',
     })
-    mockFrom.mockReturnValue(query)
+    mockFrom
+      .mockReturnValueOnce(query)
+      .mockReturnValueOnce(profileListQuery(HYDERABAD_PROFILES))
 
     await expect(getFirstCertificateForUser('learner@example.com')).resolves.toEqual({
       attemptId: FIRST_ATTEMPT_ID,
       score: 6,
       completedAt: '2026-08-01T10:00:00.000Z',
+      topPercent: 67,
+      cohortSize: 3,
+      city: 'Hyderabad',
     })
 
     expect(query.eq).toHaveBeenCalledWith('domain', 'ai')
@@ -63,9 +99,10 @@ describe('certificate data', () => {
           completed_at: '2026-08-01T10:00:00.000Z',
         }),
       )
+      .mockReturnValueOnce(profileListQuery(HYDERABAD_PROFILES))
 
     await expect(getCertificateData(RETAKE_ATTEMPT_ID)).resolves.toBeNull()
-    expect(mockFrom).toHaveBeenCalledTimes(2)
+    expect(mockFrom).toHaveBeenCalledTimes(3)
   })
 
   it('returns the first certificate with the learner profile name', async () => {
@@ -85,6 +122,7 @@ describe('certificate data', () => {
           completed_at: '2026-08-01T10:00:00.000Z',
         }),
       )
+      .mockReturnValueOnce(profileListQuery(HYDERABAD_PROFILES))
       .mockReturnValueOnce(queryResult({ full_name: 'Test Learner' }))
 
     await expect(getCertificateData(FIRST_ATTEMPT_ID)).resolves.toEqual({
@@ -92,6 +130,9 @@ describe('certificate data', () => {
       recipientName: 'Test Learner',
       score: 6,
       completedAt: '2026-08-01T10:00:00.000Z',
+      topPercent: 67,
+      cohortSize: 3,
+      city: 'Hyderabad',
     })
   })
 })

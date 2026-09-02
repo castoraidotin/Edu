@@ -65,7 +65,7 @@ describe('HomeSignupForm', () => {
     mockSignIn.mockResolvedValueOnce({})
     render(<HomeSignupForm />)
     fireEvent.click(screen.getByRole('button', { name: /continue with google/i }))
-    expect(mockSignIn).toHaveBeenCalledWith('google', { callbackUrl: '/dashboard' })
+    expect(mockSignIn).toHaveBeenCalledWith('google', { callbackUrl: '/profile/complete' })
   })
 
   it('shows API error message on failure', async () => {
@@ -84,7 +84,7 @@ describe('HomeSignupForm', () => {
     })
   })
 
-  it('submits firstName, lastName, email, password and redirects to dashboard', async () => {
+  it('submits firstName, lastName, email, password and opens profile completion', async () => {
     const push = jest.fn()
     mockUseRouter.mockReturnValue({ push })
     mockFetch.mockResolvedValueOnce({
@@ -110,7 +110,7 @@ describe('HomeSignupForm', () => {
         password: 'password123',
         redirect: false,
       })
-      expect(push).toHaveBeenCalledWith('/dashboard')
+      expect(push).toHaveBeenCalledWith('/profile/complete')
     })
   })
 

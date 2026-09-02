@@ -661,11 +661,11 @@ describe('GET /api/stats', () => {
 
     const res = await GET(makeRequest('?domain=ai'))
     const body = await res.json()
-    const roleRank = body.peerGroupRanks.find((r: { dimension: string }) => r.dimension === 'Role')
+    const roleRank = body.peerGroupRanks.find((r: { dimension: string }) => r.dimension === 'Background')
     // 5-person "Software Engineer / Developer" cohort (scores 6,7,8,9,9 - you're
     // tied for the top score) -> rank 1; 3 of your 4 peers scored lower -> 75th percentile
     expect(roleRank).toEqual({
-      dimension: 'Role',
+      dimension: 'Background',
       label: 'Software Engineer / Developer',
       rank: 1,
       percentile: 75,
