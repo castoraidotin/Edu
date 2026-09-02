@@ -1,12 +1,17 @@
 import 'server-only'
 import { supabaseAdmin } from '@/lib/supabase-server'
 import type { CertificateSummary } from '@/lib/types'
+import { latestResultsForDomain } from '@/lib/latest-results'
+import { latestByKey } from '@/lib/latest-by-key'
 
 export interface CertificateData {
   attemptId: string
   recipientName: string
   score: number
   completedAt: string
+  topPercent: number | null
+  cohortSize: number
+  city: string
 }
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
@@ -15,6 +20,36 @@ interface CertificateResultRow {
   quiz_attempt_id: string | null
   score: number
   completed_at: string
+}
+
+async function getCertificateStanding(userEmail: string, certificateScore: number) {
+  const { data, error } = await latestResultsForDomain('ai')
+  if (error || !data) return { topPercent: null, cohortSize: 0, city: 'Hyderabad' }
+
+  const latestByEmail = latestByKey(data, (result) => result.user_email)
+  const emails = [...latestByEmail.keys()]
+  const { data: profiles, error: profilesError } = await supabaseAdmin
+    .from('profiles')
+    .select('email, city')
+    .in('email', emails)
+  if (profilesError || !profiles) return { topPercent: null, cohortSize: 0, city: 'Hyderabad' }
+
+  const cityByEmail = new Map(
+    (profiles as Array<{ email: string; city: string | null }>).map((profile) => [profile.email, profile.city?.trim() || null]),
+  )
+  const city = cityByEmail.get(userEmail) || 'Hyderabad'
+  const normalizedCity = city.toLocaleLowerCase('en-IN')
+  const peerScores = [...latestByEmail.entries()]
+    .filter(([email]) => email !== userEmail && cityByEmail.get(email)?.toLocaleLowerCase('en-IN') === normalizedCity)
+    .map(([, result]) => result.score)
+  const cohortScores = [...peerScores, certificateScore]
+  const rank = cohortScores.filter((score) => score > certificateScore).length + 1
+
+  return {
+    topPercent: Math.max(1, Math.ceil((rank / cohortScores.length) * 100)),
+    cohortSize: cohortScores.length,
+    city,
+  }
 }
 
 /**
@@ -40,10 +75,13 @@ export async function getFirstCertificateForUser(
   const result = data as CertificateResultRow | null
   if (error || !result?.quiz_attempt_id) return null
 
+  const standing = await getCertificateStanding(userEmail, result.score)
+
   return {
     attemptId: result.quiz_attempt_id,
     score: result.score,
     completedAt: result.completed_at,
+    ...standing,
   }
 }
 
@@ -76,5 +114,8 @@ export async function getCertificateData(attemptId: string): Promise<Certificate
     recipientName: profile?.full_name?.trim() || 'AI learner',
     score: result.score,
     completedAt: result.completed_at,
+    topPercent: issuedCertificate.topPercent ?? null,
+    cohortSize: issuedCertificate.cohortSize ?? 0,
+    city: issuedCertificate.city?.trim() || 'Hyderabad',
   }
 }

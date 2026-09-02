@@ -11,7 +11,6 @@ import {
   Compass,
   Flame,
   Gauge,
-  MapPin,
   Target,
   TrendingUp,
   Users,
@@ -41,7 +40,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 
 function domainLabel(domain: string) {
@@ -416,35 +414,6 @@ function CommunitySnapshotCard({ stats }: { stats: StatsResponse }) {
   )
 }
 
-function RankLadderCard({ stats, domain }: { stats: StatsResponse; domain: Domain }) {
-  return (
-    <InsightCard title="Your rank by scope" description={`Your position in ${DOMAIN_LABELS[domain]}`} icon={Target} testId="rank-ladder-tile">
-      {stats.rankLadder.length === 0 ? (
-        <EmptyState>Complete this assessment to see your rank.</EmptyState>
-      ) : (
-        <div className="divide-y rounded-lg border">
-          {stats.rankLadder.map((rung) => (
-            <div key={rung.scope} className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-4 px-4 py-3.5">
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">{rung.scope}</p>
-                <p className="mt-0.5 truncate text-sm font-medium">{rung.label}</p>
-              </div>
-              <div className="text-right">
-                <p className="font-mono text-sm font-semibold">{rung.averageScore ?? '—'}</p>
-                <p className="text-[11px] text-muted-foreground">average</p>
-              </div>
-              <div className="min-w-16 text-right">
-                <p className="font-mono text-sm font-semibold text-[var(--signal)]">{rung.rank === null ? '—' : `#${rung.rank}`}</p>
-                <p className="text-[11px] text-muted-foreground">of {rung.cohortSize}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </InsightCard>
-  )
-}
-
 function NeighborsCard({ stats }: { stats: StatsResponse }) {
   return (
     <InsightCard title="Around your rank" description="People immediately above and below you" icon={Users} testId="neighbors-tile">
@@ -468,43 +437,9 @@ function NeighborsCard({ stats }: { stats: StatsResponse }) {
   )
 }
 
-function LocationComparisonCard({ stats }: { stats: StatsResponse }) {
-  return (
-    <InsightCard title="Performance by location" description="See how your score compares as the community widens" icon={MapPin} testId="location-comparison-tile">
-      {stats.locationComparisons.length === 0 ? (
-        <EmptyState>Location comparisons will appear when enough data is available.</EmptyState>
-      ) : (
-        <div className="grid gap-3 lg:grid-cols-2">
-          {stats.locationComparisons.map((item) => {
-            const difference = stats.yourScore !== null && item.averageScore !== null
-              ? roundToOne(stats.yourScore - item.averageScore)
-              : null
-            return (
-              <div key={`${item.scope}-${item.label}`} className="rounded-lg border p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <p className="text-xs text-muted-foreground">{item.scope}</p>
-                    <p className="mt-1 truncate text-sm font-medium">{item.label}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-mono text-lg font-semibold">{item.averageScore ?? '—'}</p>
-                    <p className={`text-xs ${changeClass(difference)}`}>{difference === null ? 'No comparison' : `${difference > 0 ? '+' : ''}${difference} you`}</p>
-                  </div>
-                </div>
-                <Progress value={item.averageScore === null ? 0 : item.averageScore * 10} className="mt-4 h-1.5 bg-muted" />
-                <p className="mt-2 text-xs text-muted-foreground">{item.count} test-takers</p>
-              </div>
-            )
-          })}
-        </div>
-      )}
-    </InsightCard>
-  )
-}
-
 function PeerGroupsCard({ stats }: { stats: StatsResponse }) {
   const groups = stats.peerGroupRanks.filter(
-    (group) => group.rank !== null && (group.dimension === 'Role' || group.dimension === 'Experience')
+    (group) => group.rank !== null && (group.dimension === 'Background' || group.dimension === 'Experience')
   )
   if (groups.length === 0) return null
 
@@ -523,44 +458,6 @@ function PeerGroupsCard({ stats }: { stats: StatsResponse }) {
             </div>
           ))}
       </div>
-    </InsightCard>
-  )
-}
-
-function RankedList({
-  items,
-  valueLabel,
-}: {
-  items: StatsResponse['topCitiesByScore']
-  valueLabel: 'score' | 'people'
-}) {
-  return (
-    <div className="divide-y">
-      {items.slice(0, 5).map((item) => (
-        <div key={item.label} className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 py-3 first:pt-0 last:pb-0">
-          <span className="font-mono text-xs text-muted-foreground">{item.rank}</span>
-          <span className="truncate text-sm font-medium">{item.label}</span>
-          <span className="font-mono text-sm font-semibold">{valueLabel === 'score' ? item.averageScore : item.count}</span>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function TopPlacesCard({ stats, kind }: { stats: StatsResponse; kind: 'states' | 'cities' }) {
-  const scoreItems = kind === 'states' ? stats.averageScoreByState : stats.topCitiesByScore
-  const activeItems = kind === 'states' ? stats.testTakersByState : stats.topCitiesByParticipation
-  const title = kind === 'states' ? 'Top states' : 'Top cities'
-  return (
-    <InsightCard title={title} description="Highest average and most active communities" icon={MapPin} testId={kind === 'states' ? 'top-states-tile' : 'top-cities-tile'}>
-      {scoreItems.length === 0 && activeItems.length === 0 ? (
-        <EmptyState>There is not enough regional data yet.</EmptyState>
-      ) : (
-        <div className="grid gap-6 sm:grid-cols-2">
-          <div><p className="mb-3 text-xs font-medium text-muted-foreground">Highest average</p><RankedList items={scoreItems} valueLabel="score" /></div>
-          <div><p className="mb-3 text-xs font-medium text-muted-foreground">Most active</p><RankedList items={activeItems} valueLabel="people" /></div>
-        </div>
-      )}
     </InsightCard>
   )
 }
@@ -621,10 +518,9 @@ export default function CommunityInsights({
 
       <HeroRow stats={stats} />
 
-      <section className="grid gap-4 lg:grid-cols-12" aria-label="Personal performance">
-        <div className="lg:col-span-12"><ScoreTrendCard personal={personal} /></div>
-        <div className="lg:col-span-12"><ActivityCard stats={stats} personal={personal} /></div>
-        <div className="lg:col-span-12"><LearningPatternsCard personal={personal} /></div>
+      <section className="grid gap-4 lg:grid-cols-12" aria-label="Community overview">
+        <div className="lg:col-span-7"><ScoreDistributionCard stats={stats} /></div>
+        <div className="lg:col-span-5"><CommunitySnapshotCard stats={stats} /></div>
       </section>
 
       <section className="space-y-4 pt-2">
@@ -634,11 +530,15 @@ export default function CommunityInsights({
           description="Compare your performance with other learners in Hyderabad by domain, role, and experience."
         />
         <div className="grid gap-4 lg:grid-cols-12">
-          <div className="lg:col-span-7"><ScoreDistributionCard stats={stats} /></div>
-          <div className="lg:col-span-5"><CommunitySnapshotCard stats={stats} /></div>
-          <div className="lg:col-span-12"><NeighborsCard stats={stats} /></div>
           <div className="lg:col-span-12"><PeerGroupsCard stats={stats} /></div>
+          <div className="lg:col-span-12"><NeighborsCard stats={stats} /></div>
         </div>
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-12" aria-label="Personal performance">
+        <div className="lg:col-span-12"><ScoreTrendCard personal={personal} /></div>
+        <div className="lg:col-span-12"><ActivityCard stats={stats} personal={personal} /></div>
+        <div className="lg:col-span-12"><LearningPatternsCard personal={personal} /></div>
       </section>
     </div>
   )

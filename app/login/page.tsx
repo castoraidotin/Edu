@@ -32,16 +32,25 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
 
-    const result = await signIn('credentials', { email, password, redirect: false })
-    setLoading(false)
-
-    if (result?.error) setError('Invalid email or password')
-    else router.push('/dashboard')
+    try {
+      const result = await signIn('credentials', { email, password, redirect: false })
+      if (!result || result.error) setError('Invalid email or password')
+      else router.push('/dashboard')
+    } catch {
+      setError('Could not sign in. Please check your connection and try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function handleGoogleLogin() {
     trackEvent('signup_started', { method: 'google', location: 'login_page' })
-    await signIn('google', { callbackUrl: '/dashboard' })
+    setError('')
+    try {
+      await signIn('google', { callbackUrl: '/dashboard' })
+    } catch {
+      setError('Could not open Google sign-in. Please try again.')
+    }
   }
 
   return (

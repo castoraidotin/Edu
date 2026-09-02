@@ -42,6 +42,9 @@ export interface CertificateSummary {
   attemptId: string
   score: number
   completedAt: string
+  topPercent?: number | null
+  cohortSize?: number
+  city?: string | null
 }
 
 export interface SubmitResultPayload {

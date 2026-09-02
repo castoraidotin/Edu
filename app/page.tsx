@@ -4,7 +4,6 @@ import Link from 'next/link'
 import HomeSignupForm from '@/components/HomeSignupForm'
 import PageViewTracker from '@/components/analytics/PageViewTracker'
 import Logo from '@/components/Logo'
-import LogoutButton from '@/components/LogoutButton'
 import Reveal from '@/components/home/Reveal'
 import ScrollCta from '@/components/home/ScrollCta'
 import HowItWorksPreview from '@/components/home/HowItWorksPreview'
@@ -20,15 +19,9 @@ const DOMAIN_BLURBS: Record<Domain, string> = {
   data_science: 'ML, data pipelines, SQL, and visualization.',
 }
 
-interface HomeProps {
-  searchParams?: Promise<{ from?: string | string[] }>
-}
-
-export default async function Home({ searchParams }: HomeProps = {}) {
+export default async function Home() {
   const session = await auth()
-  const params = searchParams ? await searchParams : undefined
-  const requestedFromComingSoon = params?.from === 'coming-soon'
-  if (session && !requestedFromComingSoon) redirect('/dashboard')
+  if (session) redirect('/dashboard')
 
   return (
     <div className="landing-light min-h-screen flex flex-col bg-[var(--paper)]">
@@ -36,22 +29,13 @@ export default async function Home({ searchParams }: HomeProps = {}) {
       {/* Nav — scrolls away as the hero card takes over, unchanged from before */}
       <header className="flex items-center justify-between border-b border-[var(--line)] bg-[var(--surface)] px-4 py-4 sm:px-8">
         <Logo />
-        {session ? (
-          <div className="flex items-center gap-3">
-            <span className="hidden max-w-56 truncate text-sm text-[var(--ink-soft)] sm:block">
-              {session.user?.email}
-            </span>
-            <LogoutButton />
-          </div>
-        ) : (
-          <Link
-            href="/login"
-            className="text-sm font-medium text-[var(--action)] hover:text-[var(--action-hover)] transition-colors whitespace-nowrap"
-          >
-            <span className="sm:hidden">Sign in →</span>
-            <span className="hidden sm:inline">Sign in to your account →</span>
-          </Link>
-        )}
+        <Link
+          href="/login"
+          className="text-sm font-medium text-[var(--action)] hover:text-[var(--action-hover)] transition-colors whitespace-nowrap"
+        >
+          <span className="sm:hidden">Sign in →</span>
+          <span className="hidden sm:inline">Sign in to your account →</span>
+        </Link>
       </header>
 
       {/* From lg: up, each section below is pinned full-screen and stacks
@@ -147,7 +131,7 @@ export default async function Home({ searchParams }: HomeProps = {}) {
 
       {/* Statistics — a more detailed, static counterpart to the compact
           stats panel shown inside the preview above */}
-      <section className="relative lg:sticky lg:top-0 z-20 lg:min-h-screen flex flex-col justify-center bg-[var(--paper)] px-6 sm:px-8 lg:px-16 xl:px-24 py-12 lg:py-10">
+      <section className="relative overflow-x-clip lg:sticky lg:top-0 z-20 lg:min-h-screen flex flex-col justify-center bg-[var(--paper)] px-6 sm:px-8 lg:px-16 xl:px-24 py-12 lg:py-10">
         <div className="max-w-6xl mx-auto w-full">
           <Reveal className="max-w-2xl">
             <p className="font-mono text-xs font-semibold uppercase tracking-widest text-[var(--signal)] mb-3">

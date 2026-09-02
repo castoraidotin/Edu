@@ -4,8 +4,8 @@ import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { ArrowRight, Link as LinkIcon, MapPin, ShieldCheck } from 'lucide-react'
-import { Country, State, City } from 'country-state-city'
 import AppHeader from '@/components/AppHeader'
+import LogoutButton from '@/components/LogoutButton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -14,30 +14,35 @@ import { Label } from '@/components/ui/label'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
-import { DESIGNATION_OPTIONS, EXPERIENCE_OPTIONS } from '@/lib/profile-options'
+import { BACKGROUND_OPTIONS, EXPERIENCE_OPTIONS } from '@/lib/profile-options'
 
 const BASE_PROGRESS = 40
-const INDIA_COUNTRY_CODE = 'IN'
+const ONBOARDING_COUNTRY = 'India'
+const ONBOARDING_STATE_REGION = 'Telangana'
+const UNAVAILABLE_CITY_COLOR = '#9ca3af'
+const CITY_OPTIONS = [
+  { name: 'Hyderabad', enabled: true },
+  { name: 'Bangalore', enabled: false },
+  { name: 'Chennai', enabled: false },
+  { name: 'Delhi', enabled: false },
+  { name: 'Mumbai', enabled: false },
+] as const
 
 export default function CompleteProfilePage() {
   const { data: session } = useSession()
   const router = useRouter()
-  const country = INDIA_COUNTRY_CODE
-  const [stateRegion, setStateRegion] = useState('')
   const [city, setCity] = useState('')
-  const [locationVerified, setLocationVerified] = useState(false)
-  const [checkingLocation, setCheckingLocation] = useState(false)
   const [experience, setExperience] = useState('')
-  const [designation, setDesignation] = useState('')
+  const [background, setBackground] = useState('')
   const [linkedin, setLinkedin] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const locationFilled = Boolean(country && stateRegion && city)
+  const locationFilled = Boolean(city)
   const experienceFilled = Boolean(experience)
-  const designationFilled = designation.trim().length > 0
+  const backgroundFilled = background.trim().length > 0
   const linkedinFilled = linkedin.trim().length > 0
-  const requiredFilled = [locationFilled, experienceFilled, designationFilled].filter(Boolean).length
+  const requiredFilled = [locationFilled, experienceFilled, backgroundFilled].filter(Boolean).length
   const progress = BASE_PROGRESS + requiredFilled * 20
   const allRequiredFilled = requiredFilled === 3
   const checklist = [
@@ -45,120 +50,44 @@ export default function CompleteProfilePage() {
     { label: 'Email', done: true },
     { label: 'Location', done: locationFilled },
     { label: 'Experience', done: experienceFilled },
-    { label: 'Designation', done: designationFilled },
+    { label: 'Tech / Non-Tech', done: backgroundFilled },
     { label: 'LinkedIn', done: linkedinFilled, optional: true },
   ]
-  const states = State.getStatesOfCountry(country)
-  const cities = City.getCitiesOfState(country, stateRegion)
-
-  async function handleLocationCheck(e: React.FormEvent) {
-    e.preventDefault()
-    if (!stateRegion || !city) return
-    setCheckingLocation(true)
-    setError('')
-
-    const res = await fetch('/api/profile/location', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        state_region: State.getStateByCodeAndCountry(stateRegion, country)?.name ?? stateRegion,
-        city,
-      }),
-    })
-    const data = await res.json()
-    setCheckingLocation(false)
-    if (!res.ok) {
-      setError(data.error || 'Could not check availability')
-      return
-    }
-    if (!data.available) {
-      router.push('/coming-soon')
-      return
-    }
-    setLocationVerified(true)
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!allRequiredFilled) return
     setLoading(true)
     setError('')
 
-    const res = await fetch('/api/profile', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        country: Country.getCountryByCode(country)?.name ?? country,
-        state_region: State.getStateByCodeAndCountry(stateRegion, country)?.name ?? stateRegion,
-        city,
-        years_of_experience: experience,
-        designation,
-        linkedin_url: linkedin,
-      }),
-    })
-
-    if (!res.ok) {
-      const data = await res.json()
-      setError(data.error || 'Something went wrong')
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          country: ONBOARDING_COUNTRY,
+          state_region: ONBOARDING_STATE_REGION,
+          city,
+          years_of_experience: experience,
+          designation: background,
+          linkedin_url: linkedin,
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        setError(data.error || 'Something went wrong')
+        return
+      }
+      router.push('/dashboard')
+    } catch {
+      setError('Could not save your profile. Please check your connection and try again.')
+    } finally {
       setLoading(false)
-      return
     }
-    router.push('/dashboard')
-  }
-
-  if (!locationVerified) {
-    return (
-      <main className="min-h-screen bg-background">
-        <AppHeader />
-        <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-2xl items-center px-4 py-12 sm:px-6">
-          <div className="w-full">
-            <div className="mx-auto mb-8 max-w-lg text-center">
-              <Badge className="border-emerald-200 bg-emerald-100 font-mono text-[10px] font-semibold uppercase tracking-widest text-emerald-700 shadow-none hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                Early access
-              </Badge>
-              <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Check your location</h1>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">Enter only your state and city. We&apos;ll ask for professional details after confirming availability.</p>
-            </div>
-
-            <Card className="gap-0 overflow-hidden py-0 shadow-sm">
-              <CardHeader className="border-b bg-muted/30 px-6 py-5">
-                <div className="flex items-center gap-2"><MapPin className="size-4 text-[var(--signal)]" /><CardTitle className="text-base">Your location</CardTitle></div>
-                <CardDescription>This takes less than a minute.</CardDescription>
-              </CardHeader>
-              <CardContent className="p-6">
-                <form onSubmit={handleLocationCheck} className="space-y-5">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="complete-state">State / Region</Label>
-                      <NativeSelect id="complete-state" aria-label="State or Region" value={stateRegion} onChange={(e) => { setStateRegion(e.target.value); setCity('') }}>
-                        <NativeSelectOption value="">Select state / region</NativeSelectOption>
-                        {states.map((item) => <NativeSelectOption key={item.isoCode} value={item.isoCode}>{item.name}</NativeSelectOption>)}
-                      </NativeSelect>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="complete-city">City</Label>
-                      <NativeSelect id="complete-city" aria-label="City" value={city} disabled={!stateRegion} onChange={(e) => setCity(e.target.value)}>
-                        <NativeSelectOption value="">Select city</NativeSelectOption>
-                        {cities.map((item) => <NativeSelectOption key={item.name} value={item.name}>{item.name}</NativeSelectOption>)}
-                      </NativeSelect>
-                    </div>
-                  </div>
-                  {error && <p role="alert" className="rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">{error}</p>}
-                  <Button type="submit" size="lg" className="w-full" disabled={!stateRegion || !city || checkingLocation}>
-                    {checkingLocation ? 'Checking...' : <>Check availability <ArrowRight /></>}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </main>
-    )
   }
 
   return (
     <main className="min-h-screen bg-background">
-      <AppHeader />
+      <AppHeader right={<LogoutButton />} />
       <div className="mx-auto grid max-w-5xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:py-14">
         <aside>
           <div className="mb-6">
@@ -198,6 +127,32 @@ export default function CompleteProfilePage() {
           </CardHeader>
           <CardContent className="p-6 sm:p-7">
             <form onSubmit={handleSubmit} className="space-y-7">
+              <div className="space-y-2">
+                <Label htmlFor="complete-city">City</Label>
+                <div className="relative">
+                  <MapPin className="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <NativeSelect
+                    id="complete-city"
+                    aria-label="City"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="pl-9"
+                  >
+                    <NativeSelectOption value="">Select city</NativeSelectOption>
+                    {CITY_OPTIONS.map((option) => (
+                      <NativeSelectOption
+                        key={option.name}
+                        value={option.name}
+                        disabled={!option.enabled}
+                        style={!option.enabled ? { color: UNAVAILABLE_CITY_COLOR } : undefined}
+                      >
+                        {option.name}
+                      </NativeSelectOption>
+                    ))}
+                  </NativeSelect>
+                </div>
+              </div>
+
               <section className="space-y-4">
                 <Label>Years of Experience</Label>
                 <div className="grid gap-2 sm:grid-cols-2">
@@ -208,7 +163,15 @@ export default function CompleteProfilePage() {
                 </div>
               </section>
 
-              <div className="space-y-2"><Label htmlFor="complete-designation">Designation</Label><NativeSelect id="complete-designation" aria-label="Designation" value={designation} onChange={(e) => setDesignation(e.target.value)}><NativeSelectOption value="">Select designation</NativeSelectOption>{DESIGNATION_OPTIONS.map((option) => <NativeSelectOption key={option} value={option}>{option}</NativeSelectOption>)}</NativeSelect></div>
+              <section className="space-y-3">
+                <Label>Are you Tech or Non-Tech?</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {BACKGROUND_OPTIONS.map((option) => {
+                    const id = `complete-background-${option.toLowerCase()}`
+                    return <Label key={option} htmlFor={id} className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 font-normal transition-colors hover:bg-accent/60 ${background === option ? 'border-[var(--signal)] bg-accent/60' : ''}`}><input id={id} type="radio" name="background" value={option} checked={background === option} onChange={() => setBackground(option)} aria-label={option} className="size-4 accent-[var(--signal)]" />{option}</Label>
+                  })}
+                </div>
+              </section>
 
               <div className="space-y-2"><Label htmlFor="complete-linkedin">LinkedIn Profile <span className="font-normal text-muted-foreground">(optional)</span></Label><div className="relative"><LinkIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input id="complete-linkedin" type="url" value={linkedin} onChange={(e) => setLinkedin(e.target.value)} placeholder="https://linkedin.com/in/yourname" className="pl-9" /></div></div>
 

@@ -7,7 +7,7 @@ import CommunityInsights from '@/components/stats/CommunityInsights'
 import DashboardShell from '@/components/dashboard/DashboardShell'
 import type { Domain } from '@/lib/types'
 import { DOMAIN_LABELS } from '@/lib/domains'
-import { DESIGNATION_OPTIONS, EXPERIENCE_OPTIONS } from '@/lib/profile-options'
+import { BACKGROUND_OPTIONS, EXPERIENCE_OPTIONS } from '@/lib/profile-options'
 import { crowdFilterParams } from '@/lib/crowd-filter-params'
 import type { PersonalStatsResponse, StatsResponse } from '@/lib/stats-types'
 import { trackEvent } from '@/lib/analytics'
@@ -131,7 +131,7 @@ function StatsContent() {
   const hasSpecificCommunity = true
   const locationLabel = `${LAUNCH_LOCATION.city}, ${LAUNCH_LOCATION.stateRegion}, ${LAUNCH_LOCATION.country}`
   const cohortLabel = [
-    designation === 'all' ? 'All roles' : designation,
+    designation === 'all' ? 'All backgrounds' : designation,
     experience === 'all' ? 'all experience levels' : experience,
   ].join(' Â· ')
 
@@ -152,7 +152,7 @@ function StatsContent() {
             <p className="mt-1.5 flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
               <span className="truncate">{DOMAIN_LABELS[domain]}</span>
               <span aria-hidden="true">·</span>
-              <span className="truncate">{designation === 'all' ? 'All roles' : designation} · {experience === 'all' ? 'all experience levels' : experience}</span>
+              <span className="truncate">{designation === 'all' ? 'All backgrounds' : designation} · {experience === 'all' ? 'all experience levels' : experience}</span>
             </p>
           </div>
           <Badge variant="outline" className="hidden h-8 w-fit max-w-72 gap-1.5 truncate bg-card px-3 font-normal text-muted-foreground shadow-xs sm:flex">
@@ -194,10 +194,10 @@ function StatsContent() {
                 </div>
 
                 <div>
-                  <Label htmlFor="stats-designation" className="mb-2">Designation</Label>
-                  <NativeSelect id="stats-designation" aria-label="Designation" value={designation} onChange={(e) => setDesignation(e.target.value)}>
-                    <NativeSelectOption value="all">All designations</NativeSelectOption>
-                    {DESIGNATION_OPTIONS.map((opt) => <NativeSelectOption key={opt} value={opt}>{opt}</NativeSelectOption>)}
+                  <Label htmlFor="stats-background" className="mb-2">Tech / Non-Tech</Label>
+                  <NativeSelect id="stats-background" aria-label="Tech or Non-Tech" value={designation} onChange={(e) => setDesignation(e.target.value)}>
+                    <NativeSelectOption value="all">All backgrounds</NativeSelectOption>
+                    {BACKGROUND_OPTIONS.map((opt) => <NativeSelectOption key={opt} value={opt}>{opt}</NativeSelectOption>)}
                   </NativeSelect>
                 </div>
 

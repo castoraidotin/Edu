@@ -52,6 +52,8 @@ export default async function CertificatePage({ params }: CertificatePageProps) 
           score={certificate.score}
           attemptId={certificate.attemptId}
           completedAt={certificate.completedAt}
+          topPercent={certificate.topPercent}
+          city={certificate.city}
         />
       </div>
     </main>

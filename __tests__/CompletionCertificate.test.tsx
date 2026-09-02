@@ -47,6 +47,8 @@ describe('CompletionCertificate', () => {
         score={9}
         attemptId="attempt-1234"
         completedAt="2026-08-26T12:00:00.000Z"
+        topPercent={10}
+        city="Hyderabad"
       />
     )
 
@@ -56,6 +58,10 @@ describe('CompletionCertificate', () => {
     expect(screen.queryByText(/signature/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/not a professional accreditation/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/Save a polished copy/i)).not.toBeInTheDocument()
+    expect(screen.getByText(/For completing the “Artificial Intelligence & Generative AI” assessment and ranking among the top 10% of all test-takers\./i)).toBeInTheDocument()
+    expect(screen.queryByText(/Hyderabad/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/with a score of/i)).not.toBeInTheDocument()
+    expect(screen.queryByText('9/10')).not.toBeInTheDocument()
   })
 
   it('fits a long recipient name without truncating it', () => {

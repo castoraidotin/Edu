@@ -12,33 +12,14 @@ jest.mock('next-auth/react', () => ({
   })),
 }))
 
-jest.mock('country-state-city', () => ({
-  Country: {
-    getCountryByCode: jest.fn((code: string) => code === 'IN' ? { name: 'India' } : null),
-  },
-  State: {
-    getStatesOfCountry: jest.fn(() => [{ isoCode: 'TG', name: 'Telangana' }]),
-    getStateByCodeAndCountry: jest.fn(() => ({ name: 'Telangana' })),
-  },
-  City: {
-    getCitiesOfState: jest.fn(() => [{ name: 'Hyderabad' }, { name: 'Warangal' }]),
-  },
-}))
-
 const mockUseRouter = useRouter as jest.Mock
 global.fetch = jest.fn()
 const mockFetch = fetch as jest.Mock
 
-function chooseLocation(city = 'Hyderabad') {
-  fireEvent.change(screen.getByLabelText('State or Region'), { target: { value: 'TG' } })
-  fireEvent.change(screen.getByLabelText('City'), { target: { value: city } })
-}
-
-async function confirmEligibleLocation() {
-  mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ available: true }) })
-  chooseLocation()
-  fireEvent.click(screen.getByRole('button', { name: /check availability/i }))
-  await waitFor(() => expect(screen.getByLabelText('Designation')).toBeInTheDocument())
+function fillRequiredFields() {
+  fireEvent.change(screen.getByLabelText('City'), { target: { value: 'Hyderabad' } })
+  fireEvent.click(screen.getByLabelText('1-3 years'))
+  fireEvent.click(screen.getByLabelText('Tech'))
 }
 
 describe('CompleteProfilePage', () => {
@@ -47,75 +28,93 @@ describe('CompleteProfilePage', () => {
     mockUseRouter.mockReturnValue({ push: jest.fn() })
   })
 
-  it('asks only for state and city before checking availability', () => {
+  it('shows the full profile form immediately with city as the only location field', () => {
     render(<CompleteProfilePage />)
-    expect(screen.getByLabelText('State or Region')).toBeInTheDocument()
     expect(screen.getByLabelText('City')).toBeInTheDocument()
     expect(screen.queryByLabelText('Country')).not.toBeInTheDocument()
-    expect(screen.queryByLabelText('Designation')).not.toBeInTheDocument()
-    expect(screen.queryByText('Years of Experience')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('State or Region')).not.toBeInTheDocument()
+    expect(screen.getByText('Years of Experience')).toBeInTheDocument()
+    expect(screen.getByText('Are you Tech or Non-Tech?')).toBeInTheDocument()
+    expect(screen.getByLabelText('Tech')).toBeInTheDocument()
+    expect(screen.getByLabelText('Non-Tech')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('https://linkedin.com/in/yourname')).toBeInTheDocument()
   })
 
-  it('keeps availability check disabled until both location fields are selected', () => {
+  it('shows all five cities but enables only Hyderabad', () => {
     render(<CompleteProfilePage />)
-    const button = screen.getByRole('button', { name: /check availability/i })
+    const select = screen.getByLabelText('City') as HTMLSelectElement
+    const options = Array.from(select.options).slice(1)
+
+    expect(options.map((option) => option.textContent)).toEqual([
+      'Hyderabad',
+      'Bangalore',
+      'Chennai',
+      'Delhi',
+      'Mumbai',
+    ])
+    expect(options.find((option) => option.value === 'Hyderabad')).not.toBeDisabled()
+    for (const city of ['Bangalore', 'Chennai', 'Delhi', 'Mumbai']) {
+      const option = options.find((item) => item.value === city)
+      expect(option).toBeDisabled()
+      expect(option).toHaveStyle({ color: '#9ca3af' })
+    }
+  })
+
+  it('keeps Continue disabled until city, experience, and background are selected', () => {
+    render(<CompleteProfilePage />)
+    const button = screen.getByRole('button', { name: /continue/i })
     expect(button).toBeDisabled()
-    chooseLocation()
+    fillRequiredFields()
     expect(button).toBeEnabled()
   })
 
-  it('saves the location and sends unavailable cities directly to the waitlist', async () => {
-    const push = jest.fn()
-    mockUseRouter.mockReturnValue({ push })
-    mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ available: false }) })
+  it('updates profile progress as required fields are completed', () => {
     render(<CompleteProfilePage />)
-    chooseLocation('Warangal')
-    fireEvent.click(screen.getByRole('button', { name: /check availability/i }))
-
-    await waitFor(() => expect(push).toHaveBeenCalledWith('/coming-soon'))
-    expect(mockFetch).toHaveBeenCalledWith('/api/profile/location', expect.objectContaining({ method: 'PATCH' }))
-    const body = JSON.parse(mockFetch.mock.calls[0][1].body)
-    expect(body).toEqual({ state_region: 'Telangana', city: 'Warangal' })
-  })
-
-  it('reveals professional details only after an eligible location is confirmed', async () => {
-    render(<CompleteProfilePage />)
-    await confirmEligibleLocation()
-    expect(screen.getByText('Years of Experience')).toBeInTheDocument()
-    expect(screen.getByLabelText('Designation')).toBeInTheDocument()
-    expect(screen.getByPlaceholderText('https://linkedin.com/in/yourname')).toBeInTheDocument()
+    expect(screen.getByTestId('progress-percent')).toHaveTextContent('40%')
+    fireEvent.change(screen.getByLabelText('City'), { target: { value: 'Hyderabad' } })
     expect(screen.getByTestId('progress-percent')).toHaveTextContent('60%')
+    fireEvent.click(screen.getByLabelText('1-3 years'))
+    fireEvent.click(screen.getByLabelText('Tech'))
+    expect(screen.getByTestId('progress-percent')).toHaveTextContent('100%')
   })
 
-  it('submits the complete profile and opens the dashboard for an eligible user', async () => {
+  it('submits Hyderabad with its derived country and state, then opens the dashboard', async () => {
     const push = jest.fn()
     mockUseRouter.mockReturnValue({ push })
-    render(<CompleteProfilePage />)
-    await confirmEligibleLocation()
-    fireEvent.click(screen.getByLabelText('1-3 years'))
-    fireEvent.change(screen.getByLabelText('Designation'), { target: { value: 'Data Scientist' } })
-    expect(screen.getByTestId('progress-percent')).toHaveTextContent('100%')
-
     mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ success: true }) })
-    fireEvent.click(screen.getByRole('button', { name: /continue/i }))
-    await waitFor(() => expect(push).toHaveBeenCalledWith('/dashboard'))
 
-    const body = JSON.parse(mockFetch.mock.calls[1][1].body)
+    render(<CompleteProfilePage />)
+    fillRequiredFields()
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }))
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/dashboard'))
+    expect(mockFetch).toHaveBeenCalledWith('/api/profile', expect.objectContaining({ method: 'PATCH' }))
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body)
     expect(body).toEqual(expect.objectContaining({
       country: 'India',
       state_region: 'Telangana',
       city: 'Hyderabad',
       years_of_experience: '1-3 years',
-      designation: 'Data Scientist',
+      designation: 'Tech',
     }))
   })
 
-  it('shows a location-check error without revealing professional fields', async () => {
-    mockFetch.mockResolvedValueOnce({ ok: false, json: async () => ({ error: 'Could not save location' }) })
+  it('shows a profile-save error', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({ error: 'Could not save profile' }),
+    })
     render(<CompleteProfilePage />)
-    chooseLocation()
-    fireEvent.click(screen.getByRole('button', { name: /check availability/i }))
-    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Could not save location'))
-    expect(screen.queryByLabelText('Designation')).not.toBeInTheDocument()
+    fillRequiredFields()
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }))
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Could not save profile'))
+  })
+
+  it('shows a loading state while saving', async () => {
+    mockFetch.mockImplementationOnce(() => new Promise(() => {}))
+    render(<CompleteProfilePage />)
+    fillRequiredFields()
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }))
+    await waitFor(() => expect(screen.getByText('Saving...')).toBeInTheDocument())
   })
 })

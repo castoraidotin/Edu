@@ -182,12 +182,17 @@ describe('ResultsScreen', () => {
             attemptId: '12345678-abcd-efgh',
             score: 8,
             completedAt: '2026-08-26T12:00:00.000Z',
+            topPercent: 10,
+            city: 'Hyderabad',
           }}
           onTryAgain={onTryAgain}
         />
       )
 
       const certificate = screen.getByTestId('ai-completion-certificate')
+      const scrollPrompt = screen.getByRole('link', { name: /Scroll down to view your certificate\./i })
+      expect(scrollPrompt).toHaveAttribute('href', '#completion-certificate')
+      expect(scrollPrompt).toHaveClass('fixed', 'right-4', 'top-4', 'z-50')
       expect(certificate).toHaveTextContent('Your certificate is ready')
       expect(
         screen.getByRole('heading', { name: 'Your benchmark' }).compareDocumentPosition(certificate) &
@@ -195,6 +200,7 @@ describe('ResultsScreen', () => {
       ).toBeTruthy()
       expect(certificate).toHaveTextContent('Shanthan Kumar')
       expect(certificate).toHaveTextContent('EDU-AI-12345678AB')
+      expect(certificate).toHaveTextContent(/ranking among the top 10% of all test-takers\./i)
       expect(screen.getByRole('button', { name: /Share certificate/i })).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /Download PNG/i })).toBeInTheDocument()
       expect(screen.getByRole('link', { name: /Share on LinkedIn/i })).toBeInTheDocument()
@@ -207,7 +213,7 @@ describe('ResultsScreen', () => {
       expect(screen.queryByTestId('ai-completion-certificate')).not.toBeInTheDocument()
     })
 
-    it('keeps the first-attempt certificate score after an AI retake', () => {
+    it('keeps scores off the shareable certificate after an AI retake', () => {
       render(
         <ResultsScreen
           domain="ai"
@@ -217,19 +223,24 @@ describe('ResultsScreen', () => {
             attemptId: '12345678-abcd-efgh',
             score: 6,
             completedAt: '2026-08-26T12:00:00.000Z',
+            topPercent: 25,
+            city: 'Hyderabad',
           }}
           onTryAgain={onTryAgain}
         />
       )
 
       expect(screen.getByRole('heading', { name: 'Your benchmark' }).parentElement).toHaveTextContent('10 / 10')
-      expect(screen.getByTestId('ai-completion-certificate')).toHaveTextContent('6/10')
-      expect(screen.getByTestId('ai-completion-certificate')).not.toHaveTextContent('10/10')
+      const certificate = screen.getByTestId('ai-completion-certificate')
+      expect(certificate).toHaveTextContent(/ranking among the top 25% of all test-takers\./i)
+      expect(certificate).not.toHaveTextContent('6/10')
+      expect(certificate).not.toHaveTextContent('10/10')
     })
 
     it('does not mint a certificate client-side without an issued first-attempt record', () => {
       render(<ResultsScreen domain="ai" score={8} onTryAgain={onTryAgain} />)
       expect(screen.queryByTestId('ai-completion-certificate')).not.toBeInTheDocument()
+      expect(screen.queryByText('Scroll down to view your certificate.')).not.toBeInTheDocument()
     })
   })
 
@@ -244,6 +255,18 @@ describe('ResultsScreen', () => {
       render(<ResultsScreen domain="ai" score={4} onTryAgain={onTryAgain} />)
       fireEvent.click(screen.getByRole('button', { name: /Dashboard/i }))
       expect(push).toHaveBeenCalledWith('/dashboard')
+    })
+
+    it('places a highlighted Insights action after Dashboard and routes to the selected domain', () => {
+      render(<ResultsScreen domain="ai" score={4} onTryAgain={onTryAgain} />)
+
+      const dashboard = screen.getByRole('button', { name: /Dashboard/i })
+      const insights = screen.getByRole('button', { name: /Insights/i })
+      expect(dashboard.compareDocumentPosition(insights) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+      expect(insights).toHaveClass('results-insights-button')
+
+      fireEvent.click(insights)
+      expect(push).toHaveBeenCalledWith('/stats?domain=ai')
     })
   })
 })

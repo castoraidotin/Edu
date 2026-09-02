@@ -210,6 +210,45 @@
   animation: bounce-slow 2s ease-in-out infinite;
 }
 
+/* A quiet gold sweep makes the post-result Insights action discoverable
+   without competing with the primary Castor CTA above it. */
+@keyframes insights-gold-shine {
+  0%, 58% { transform: translateX(-180%) skewX(-18deg); }
+  82%, 100% { transform: translateX(320%) skewX(-18deg); }
+}
+
+.results-insights-button {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-color: rgba(202, 138, 4, 0.45);
+  background: linear-gradient(110deg, #fffdf4 0%, #ffffff 48%, #fff9df 100%);
+  color: #713f12;
+  box-shadow: 0 1px 3px rgba(161, 98, 7, 0.12), inset 0 0 0 1px rgba(250, 204, 21, 0.08);
+}
+
+.results-insights-button:hover {
+  border-color: rgba(202, 138, 4, 0.7);
+  background: linear-gradient(110deg, #fff8d6 0%, #fffdf4 48%, #fff3bd 100%);
+  color: #713f12;
+}
+
+.results-insights-button::after {
+  content: '';
+  position: absolute;
+  inset: -45% auto -45% -32%;
+  z-index: -1;
+  width: 23%;
+  background: linear-gradient(90deg, transparent, rgba(250, 204, 21, 0.3), transparent);
+  animation: insights-gold-shine 4.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .results-insights-button::after {
+    animation: none;
+  }
+}
+
 /* Results use the homepage's stacked-card motion only when there is enough
    room for both layers. Short or narrow viewports fall back to normal flow so
    the certificate never opens with cropped corners or hidden controls. */

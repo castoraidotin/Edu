@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Separator } from '@/components/ui/separator'
-import { DESIGNATION_OPTIONS, EXPERIENCE_OPTIONS } from '@/lib/profile-options'
+import { BACKGROUND_OPTIONS, EXPERIENCE_OPTIONS } from '@/lib/profile-options'
 
 interface Props {
   initialValues: {
@@ -37,13 +37,13 @@ function nameToStateCode(name: string, countryCode: string): string {
 export default function ProfileEditForm({ initialValues }: Props) {
   const initialCountryCode = nameToCountryCode(initialValues.country)
   const initialStateCode = nameToStateCode(initialValues.state_region, initialCountryCode)
-  const initialDesignation = DESIGNATION_OPTIONS.includes(initialValues.designation as (typeof DESIGNATION_OPTIONS)[number]) ? initialValues.designation : ''
+  const initialBackground = BACKGROUND_OPTIONS.includes(initialValues.designation as (typeof BACKGROUND_OPTIONS)[number]) ? initialValues.designation : ''
 
   const [country, setCountry] = useState(initialCountryCode)
   const [stateRegion, setStateRegion] = useState(initialStateCode)
   const [city, setCity] = useState(initialValues.city)
   const [experience, setExperience] = useState(initialValues.years_of_experience)
-  const [designation, setDesignation] = useState(initialDesignation)
+  const [background, setBackground] = useState(initialBackground)
   const [linkedin, setLinkedin] = useState(initialValues.linkedin_url)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -58,26 +58,30 @@ export default function ProfileEditForm({ initialValues }: Props) {
     setError('')
     setSaved(false)
 
-    const res = await fetch('/api/profile', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        country: Country.getCountryByCode(country)?.name ?? country,
-        state_region: State.getStateByCodeAndCountry(stateRegion, country)?.name ?? stateRegion,
-        city,
-        years_of_experience: experience,
-        designation,
-        linkedin_url: linkedin,
-      }),
-    })
-
-    const data = await res.json()
-    setLoading(false)
-    if (!res.ok) {
-      setError(data.error || 'Something went wrong')
-      return
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          country: Country.getCountryByCode(country)?.name ?? country,
+          state_region: State.getStateByCodeAndCountry(stateRegion, country)?.name ?? stateRegion,
+          city,
+          years_of_experience: experience,
+          designation: background,
+          linkedin_url: linkedin,
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        setError(data.error || 'Something went wrong')
+        return
+      }
+      setSaved(true)
+    } catch {
+      setError('Could not save your profile. Please check your connection and try again.')
+    } finally {
+      setLoading(false)
     }
-    setSaved(true)
   }
 
   return (
@@ -140,10 +144,10 @@ export default function ProfileEditForm({ initialValues }: Props) {
 
           <div className="grid gap-5 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="profile-designation">Designation</Label>
-              <NativeSelect id="profile-designation" aria-label="Designation" value={designation} required onChange={(e) => setDesignation(e.target.value)}>
-                <NativeSelectOption value="">Select designation</NativeSelectOption>
-                {DESIGNATION_OPTIONS.map((option) => <NativeSelectOption key={option} value={option}>{option}</NativeSelectOption>)}
+              <Label htmlFor="profile-background">Tech / Non-Tech</Label>
+              <NativeSelect id="profile-background" aria-label="Tech or Non-Tech" value={background} required onChange={(e) => setBackground(e.target.value)}>
+                <NativeSelectOption value="">Select Tech / Non-Tech</NativeSelectOption>
+                {BACKGROUND_OPTIONS.map((option) => <NativeSelectOption key={option} value={option}>{option}</NativeSelectOption>)}
               </NativeSelect>
             </div>
             <div className="space-y-2">
