@@ -58,6 +58,27 @@ describe('POST /api/auth/signup', () => {
     expect(body.success).toBe(true)
   })
 
+  it('allows company/team name to be omitted', async () => {
+    mockNoExisting()
+    mockInsertSuccess()
+    const res = await POST(makeRequest(validBody))
+    expect(res.status).toBe(201)
+  })
+
+  it('rejects spaces and special characters in company/team name', async () => {
+    for (const companyName of ['Acme Team', 'Acme-Team', 'Acme_Team', 'Acme!']) {
+      const res = await POST(makeRequest({ ...validBody, companyName }))
+      expect(res.status).toBe(400)
+      expect((await res.json()).error).toMatch(/letters and numbers/)
+    }
+  })
+
+  it('rejects company/team name over 100 characters', async () => {
+    const res = await POST(makeRequest({ ...validBody, companyName: 'a'.repeat(101) }))
+    expect(res.status).toBe(400)
+    expect((await res.json()).error).toMatch(/100 characters/)
+  })
+
   it('returns 400 when firstName is missing', async () => {
     const res = await POST(makeRequest({ ...validBody, firstName: '' }))
     expect(res.status).toBe(400)
@@ -198,6 +219,32 @@ describe('POST /api/auth/signup', () => {
     })
     await POST(makeRequest(validBody))
     expect(insertedData.full_name).toBe('John Doe')
+  })
+
+  it('stores a valid company/team name', async () => {
+    mockNoExisting()
+    let insertedData: Record<string, unknown> = {}
+    mockFrom.mockReturnValueOnce({
+      insert: jest.fn().mockImplementation((data) => {
+        insertedData = data
+        return Promise.resolve({ error: null })
+      }),
+    })
+    await POST(makeRequest({ ...validBody, companyName: 'AcmeTeam42' }))
+    expect(insertedData.company_name).toBe('AcmeTeam42')
+  })
+
+  it('stores an omitted company/team name as null', async () => {
+    mockNoExisting()
+    let insertedData: Record<string, unknown> = {}
+    mockFrom.mockReturnValueOnce({
+      insert: jest.fn().mockImplementation((data) => {
+        insertedData = data
+        return Promise.resolve({ error: null })
+      }),
+    })
+    await POST(makeRequest(validBody))
+    expect(insertedData.company_name).toBeNull()
   })
 
   it('returns 400 when firstName is only whitespace', async () => {

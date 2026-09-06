@@ -9,6 +9,12 @@ CREATE TABLE IF NOT EXISTS profiles (
   first_name TEXT,
   last_name TEXT,
   full_name TEXT,
+  company_name TEXT CHECK (
+    company_name IS NULL OR (
+      char_length(company_name) <= 100
+      AND company_name ~ '^[A-Za-z0-9]+$'
+    )
+  ),
   password_hash TEXT,        -- null for Google-only users
   created_at TIMESTAMPTZ DEFAULT NOW()
 );

@@ -27,8 +27,17 @@ describe('SignupPage', () => {
     render(<SignupPage />)
     expect(screen.getByPlaceholderText('John')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('Doe')).toBeInTheDocument()
+    expect(screen.getByLabelText(/Company Name \/ Team Name/i)).toBeInTheDocument()
     expect(screen.getByPlaceholderText('you@example.com')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('Min. 8 characters')).toBeInTheDocument()
+  })
+
+  it('prevents spaces and special characters in company/team name', () => {
+    render(<SignupPage />)
+    const companyName = screen.getByLabelText(/Company Name \/ Team Name/i) as HTMLInputElement
+    fireEvent.change(companyName, { target: { value: 'Acme Team!_42' } })
+    expect(companyName.value).toBe('AcmeTeam42')
+    expect(companyName).not.toBeRequired()
   })
 
   it('renders the Create Account heading', () => {
@@ -87,11 +96,15 @@ describe('SignupPage', () => {
     render(<SignupPage />)
     fireEvent.change(screen.getByPlaceholderText('John'), { target: { value: 'John' } })
     fireEvent.change(screen.getByPlaceholderText('Doe'), { target: { value: 'Doe' } })
+    fireEvent.change(screen.getByLabelText(/Company Name \/ Team Name/i), { target: { value: 'Acme42' } })
     fireEvent.change(screen.getByPlaceholderText('you@example.com'), { target: { value: 'john@example.com' } })
     fireEvent.change(screen.getByPlaceholderText('Min. 8 characters'), { target: { value: 'password123' } })
     fireEvent.click(screen.getByRole('button', { name: /create account/i }))
 
     await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith('/api/auth/signup', expect.objectContaining({
+        body: JSON.stringify({ firstName: 'John', lastName: 'Doe', companyName: 'Acme42', email: 'john@example.com', password: 'password123' }),
+      }))
       expect(mockSignIn).toHaveBeenCalledWith('credentials', {
         email: 'john@example.com',
         password: 'password123',

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Country, State, City } from 'country-state-city'
 import { DESIGNATION_OPTIONS, EXPERIENCE_OPTIONS } from '@/lib/profile-options'
+import { COMPANY_NAME_MAX_LENGTH, sanitizeCompanyName } from '@/lib/company-name'
 
 interface Props {
   initialValues: {
@@ -14,6 +15,7 @@ interface Props {
     years_of_experience: string
     designation: string
     linkedin_url: string
+    company_name: string
   }
 }
 
@@ -42,6 +44,7 @@ export default function ProfileEditForm({ initialValues }: Props) {
   const [experience, setExperience] = useState(initialValues.years_of_experience)
   const [designation, setDesignation] = useState(initialValues.designation)
   const [linkedin, setLinkedin] = useState(initialValues.linkedin_url)
+  const [companyName, setCompanyName] = useState(initialValues.company_name)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
@@ -65,6 +68,7 @@ export default function ProfileEditForm({ initialValues }: Props) {
         years_of_experience: experience,
         designation,
         linkedin_url: linkedin,
+        company_name: companyName,
       }),
     })
 
@@ -188,6 +192,27 @@ export default function ProfileEditForm({ initialValues }: Props) {
             <option key={opt} value={opt}>{opt}</option>
           ))}
         </select>
+      </div>
+
+      {/* Company / Team */}
+      <div>
+        <label className={labelClass} htmlFor="profile-company-name">
+          Company Name / Team Name{' '}
+          <span className="text-[var(--ink-soft)] font-normal">(Optional)</span>
+        </label>
+        <input
+          id="profile-company-name"
+          type="text"
+          value={companyName}
+          onChange={(e) => setCompanyName(sanitizeCompanyName(e.target.value))}
+          maxLength={COMPANY_NAME_MAX_LENGTH}
+          pattern="[A-Za-z0-9]*"
+          title="Use letters and numbers only"
+          autoComplete="organization"
+          placeholder="AcmeTeam"
+          className={inputClass}
+        />
+        <p className="mt-1 text-xs text-[var(--ink-soft)]">Letters and numbers only; no spaces.</p>
       </div>
 
       {/* LinkedIn */}

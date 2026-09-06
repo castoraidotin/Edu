@@ -5,12 +5,14 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { signIn, useSession } from 'next-auth/react'
 import { trackEvent } from '@/lib/analytics'
+import { COMPANY_NAME_MAX_LENGTH, sanitizeCompanyName } from '@/lib/company-name'
 
 export default function SignupPage() {
   const router = useRouter()
   const { data: session, status } = useSession()
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
+  const [companyName, setCompanyName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -31,7 +33,7 @@ export default function SignupPage() {
     const res = await fetch('/api/auth/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ firstName, lastName, email, password }),
+      body: JSON.stringify({ firstName, lastName, companyName, email, password }),
     })
 
     const data = await res.json()
@@ -120,6 +122,26 @@ export default function SignupPage() {
                 placeholder="Doe"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-[var(--ink)] mb-1" htmlFor="signup-company-name">
+              Company Name / Team Name{' '}
+              <span className="text-[var(--ink-soft)] font-normal">(Optional)</span>
+            </label>
+            <input
+              id="signup-company-name"
+              type="text"
+              value={companyName}
+              onChange={(e) => setCompanyName(sanitizeCompanyName(e.target.value))}
+              maxLength={COMPANY_NAME_MAX_LENGTH}
+              pattern="[A-Za-z0-9]*"
+              title="Use letters and numbers only"
+              autoComplete="organization"
+              className="w-full border border-[var(--line)] rounded-md px-3 py-2 text-sm text-[var(--ink)] bg-[var(--surface)] focus:outline-none focus:ring-1 focus:ring-[var(--action)] focus:border-[var(--action)]"
+              placeholder="AcmeTeam"
+            />
+            <p className="mt-1 text-xs text-[var(--ink-soft)]">Letters and numbers only; no spaces.</p>
           </div>
 
           <div>

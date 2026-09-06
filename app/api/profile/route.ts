@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { EXPERIENCE_OPTIONS } from '@/lib/profile-options'
 import { requireSession } from '@/lib/session'
+import { getCompanyNameError } from '@/lib/company-name'
 
 export async function GET() {
   const { session, unauthorizedResponse } = await requireSession()
@@ -9,7 +10,7 @@ export async function GET() {
 
   const { data, error } = await supabaseAdmin
     .from('profiles')
-    .select('full_name, email, country, state_region, city, years_of_experience, designation, linkedin_url, profile_completed')
+    .select('full_name, email, country, state_region, city, years_of_experience, designation, linkedin_url, company_name, profile_completed')
     .eq('email', session.user.email)
     .single()
 
@@ -31,6 +32,7 @@ export async function PATCH(req: NextRequest) {
     years_of_experience?: string
     designation?: string
     linkedin_url?: string
+    company_name?: string
   }
   try {
     body = await req.json()
@@ -38,7 +40,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const { country, state_region, city, years_of_experience, designation, linkedin_url } = body
+  const { country, state_region, city, years_of_experience, designation, linkedin_url, company_name } = body
 
   if (!country?.trim()) {
     return NextResponse.json({ error: 'Country is required' }, { status: 400 })
@@ -75,6 +77,11 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid years of experience value' }, { status: 400 })
   }
 
+  const companyNameError = getCompanyNameError(company_name)
+  if (companyNameError) {
+    return NextResponse.json({ error: companyNameError }, { status: 400 })
+  }
+
   // LinkedIn URL is optional, but when provided it must be a valid, safe
   // https:// URL — reject javascript:/data: URIs or malformed input that
   // could later be rendered as an href elsewhere in the app.
@@ -103,6 +110,9 @@ export async function PATCH(req: NextRequest) {
       years_of_experience,
       designation: designation.trim(),
       linkedin_url: trimmedLinkedinUrl || null,
+      ...(company_name !== undefined
+        ? { company_name: company_name.trim() || null }
+        : {}),
       profile_completed: true,
     }, {
       onConflict: 'email',

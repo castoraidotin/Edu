@@ -38,12 +38,21 @@ describe('HomeSignupForm', () => {
     expect(screen.getByText('OR EMAIL SIGNUP')).toBeInTheDocument()
   })
 
-  it('renders all four form fields', () => {
+  it('renders all form fields', () => {
     render(<HomeSignupForm />)
     expect(screen.getByPlaceholderText('John')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('Doe')).toBeInTheDocument()
+    expect(screen.getByLabelText(/Company Name \/ Team Name/i)).toBeInTheDocument()
     expect(screen.getByPlaceholderText('you@example.com')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('Min. 8 characters')).toBeInTheDocument()
+  })
+
+  it('prevents spaces and special characters in company/team name', () => {
+    render(<HomeSignupForm />)
+    const companyName = screen.getByLabelText(/Company Name \/ Team Name/i) as HTMLInputElement
+    fireEvent.change(companyName, { target: { value: 'Acme Team!_42' } })
+    expect(companyName.value).toBe('AcmeTeam42')
+    expect(companyName).not.toBeRequired()
   })
 
   it('renders Continue with Google button', () => {
@@ -96,6 +105,7 @@ describe('HomeSignupForm', () => {
     render(<HomeSignupForm />)
     fireEvent.change(screen.getByPlaceholderText('John'), { target: { value: 'Jane' } })
     fireEvent.change(screen.getByPlaceholderText('Doe'), { target: { value: 'Smith' } })
+    fireEvent.change(screen.getByLabelText(/Company Name \/ Team Name/i), { target: { value: 'Acme42' } })
     fireEvent.change(screen.getByPlaceholderText('you@example.com'), { target: { value: 'jane@example.com' } })
     fireEvent.change(screen.getByPlaceholderText('Min. 8 characters'), { target: { value: 'password123' } })
     fireEvent.click(screen.getByRole('button', { name: /create account/i }))
@@ -103,7 +113,7 @@ describe('HomeSignupForm', () => {
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalledWith('/api/auth/signup', expect.objectContaining({
         method: 'POST',
-        body: JSON.stringify({ firstName: 'Jane', lastName: 'Smith', email: 'jane@example.com', password: 'password123' }),
+        body: JSON.stringify({ firstName: 'Jane', lastName: 'Smith', companyName: 'Acme42', email: 'jane@example.com', password: 'password123' }),
       }))
       expect(mockSignIn).toHaveBeenCalledWith('credentials', {
         email: 'jane@example.com',
