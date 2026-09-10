@@ -106,3 +106,5 @@ Current migrations:
   storage sink for the app's funnel events (`lib/analytics.ts` →
   `/api/analytics/track`). Vercel Web Analytics gates custom events behind a
   Pro plan, so this table is where events are actually queryable.
+- `migration-company-name.sql` — adds the optional, alphanumeric
+  `company_name` field used by email signup and profile editing.

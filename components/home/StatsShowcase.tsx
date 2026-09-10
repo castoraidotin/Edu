@@ -54,7 +54,7 @@ export default function StatsShowcase() {
 
   return (
     <div ref={ref} className="relative max-w-5xl mx-auto" aria-hidden="true">
-      <div className="absolute -inset-8 sm:-inset-14 rounded-[2rem] bg-[radial-gradient(closest-side,var(--signal-soft),transparent)] opacity-70 blur-2xl motion-safe:animate-ambient pointer-events-none" />
+      <div className="absolute -inset-6 sm:-inset-14 rounded-[2rem] bg-[radial-gradient(closest-side,var(--signal-soft),transparent)] opacity-70 blur-2xl motion-safe:animate-ambient pointer-events-none" />
       <div className="relative bg-[var(--surface)] border border-[var(--line)] rounded-2xl shadow-xl overflow-hidden">
         <div className="flex items-center gap-1.5 px-5 py-3.5 border-b border-[var(--line)] bg-[var(--paper)]">
           <span className="w-2.5 h-2.5 rounded-full bg-[var(--line)]" />
