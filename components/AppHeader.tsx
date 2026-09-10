@@ -6,17 +6,19 @@ import type { ReactNode } from 'react'
 import Logo from '@/components/Logo'
 
 interface AppHeaderProps {
+  center?: ReactNode
   right?: ReactNode
   sticky?: boolean
 }
 
-export default function AppHeader({ right, sticky }: AppHeaderProps) {
+export default function AppHeader({ center, right, sticky }: AppHeaderProps) {
   return (
-    <div
-      className={`${sticky ? 'sticky top-0 z-20' : ''} flex items-center justify-between px-4 sm:px-6 h-14 bg-[var(--surface)] border-b border-[var(--line)]`}
-    >
-      <Logo />
-      {right}
-    </div>
+    <header className={`${sticky ? 'sticky top-0 z-20' : ''} border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85`}>
+      <div className="mx-auto flex h-16 max-w-7xl items-center px-4 sm:px-6">
+        <Logo />
+        {center && <div className="ml-10 hidden items-center md:flex">{center}</div>}
+        <div className="ml-auto">{right}</div>
+      </div>
+    </header>
   )
 }

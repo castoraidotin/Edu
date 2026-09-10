@@ -1,9 +1,16 @@
 'use client'
 
 import { useState } from 'react'
+import { CheckCircle2, Link as LinkIcon, MapPin, Save } from 'lucide-react'
 import { Country, State, City } from 'country-state-city'
-import { DESIGNATION_OPTIONS, EXPERIENCE_OPTIONS } from '@/lib/profile-options'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
+import { Separator } from '@/components/ui/separator'
 import { COMPANY_NAME_MAX_LENGTH, sanitizeCompanyName } from '@/lib/company-name'
+import { BACKGROUND_OPTIONS, EXPERIENCE_OPTIONS } from '@/lib/profile-options'
 
 interface Props {
   initialValues: {
@@ -19,30 +26,26 @@ interface Props {
   }
 }
 
-// Convert stored full names back to ISO codes for dropdown pre-selection
 function nameToCountryCode(name: string): string {
   if (!name) return ''
-  return Country.getAllCountries().find((c) => c.name === name)?.isoCode ?? ''
+  return Country.getAllCountries().find((country) => country.name === name)?.isoCode ?? ''
 }
 
-function nameToStateCode(stateName: string, countryCode: string): string {
-  if (!stateName || !countryCode) return ''
-  return State.getStatesOfCountry(countryCode).find((s) => s.name === stateName)?.isoCode ?? ''
+function nameToStateCode(name: string, countryCode: string): string {
+  if (!name || !countryCode) return ''
+  return State.getStatesOfCountry(countryCode).find((state) => state.name === name)?.isoCode ?? ''
 }
-
-const inputClass =
-  'w-full border border-[var(--line)] rounded-md px-3 py-2 text-sm text-[var(--ink)] bg-[var(--surface)] focus:outline-none focus:ring-1 focus:ring-[var(--action)] focus:border-[var(--action)] disabled:opacity-50 disabled:cursor-not-allowed'
-const labelClass = 'block text-sm font-medium text-[var(--ink)] mb-1'
 
 export default function ProfileEditForm({ initialValues }: Props) {
   const initialCountryCode = nameToCountryCode(initialValues.country)
   const initialStateCode = nameToStateCode(initialValues.state_region, initialCountryCode)
+  const initialBackground = BACKGROUND_OPTIONS.includes(initialValues.designation as (typeof BACKGROUND_OPTIONS)[number]) ? initialValues.designation : ''
 
   const [country, setCountry] = useState(initialCountryCode)
   const [stateRegion, setStateRegion] = useState(initialStateCode)
   const [city, setCity] = useState(initialValues.city)
   const [experience, setExperience] = useState(initialValues.years_of_experience)
-  const [designation, setDesignation] = useState(initialValues.designation)
+  const [background, setBackground] = useState(initialBackground)
   const [linkedin, setLinkedin] = useState(initialValues.linkedin_url)
   const [companyName, setCompanyName] = useState(initialValues.company_name)
   const [loading, setLoading] = useState(false)
@@ -58,190 +61,125 @@ export default function ProfileEditForm({ initialValues }: Props) {
     setError('')
     setSaved(false)
 
-    const res = await fetch('/api/profile', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        country: Country.getCountryByCode(country)?.name ?? country,
-        state_region: State.getStateByCodeAndCountry(stateRegion, country)?.name ?? stateRegion,
-        city,
-        years_of_experience: experience,
-        designation,
-        linkedin_url: linkedin,
-        company_name: companyName,
-      }),
-    })
-
-    const data = await res.json()
-    setLoading(false)
-
-    if (!res.ok) {
-      setError(data.error || 'Something went wrong')
-      return
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          country: Country.getCountryByCode(country)?.name ?? country,
+          state_region: State.getStateByCodeAndCountry(stateRegion, country)?.name ?? stateRegion,
+          city,
+          years_of_experience: experience,
+          designation: background,
+          linkedin_url: linkedin,
+          company_name: companyName,
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        setError(data.error || 'Something went wrong')
+        return
+      }
+      setSaved(true)
+    } catch {
+      setError('Could not save your profile. Please check your connection and try again.')
+    } finally {
+      setLoading(false)
     }
-
-    setSaved(true)
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-[var(--surface)] rounded-lg border border-[var(--line)] p-6 space-y-5">
-      {/* Read-only fields */}
-      <div>
-        <label className="block text-sm font-medium text-[var(--ink-soft)] mb-1">Name</label>
-        <p className="text-sm text-[var(--ink)] py-2 px-3 bg-[var(--paper)] rounded-md border border-[var(--line)]">
-          {initialValues.full_name || '—'}
-        </p>
-      </div>
+    <Card className="gap-0 overflow-hidden py-0 shadow-sm">
+      <CardHeader className="border-b bg-muted/35 px-6 py-5">
+        <CardTitle className="text-base">Professional profile</CardTitle>
+        <CardDescription>Used to build relevant peer benchmarks. Your private details are never shown publicly.</CardDescription>
+      </CardHeader>
+      <CardContent className="p-6">
+        <form onSubmit={handleSubmit} className="space-y-7">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2"><Label>Name</Label><div className="min-h-9 rounded-md border bg-muted/60 px-3 py-2 text-sm">{initialValues.full_name || '—'}</div></div>
+            <div className="space-y-2"><Label>Email</Label><div className="min-h-9 truncate rounded-md border bg-muted/60 px-3 py-2 text-sm">{initialValues.email}</div></div>
+          </div>
 
-      <div>
-        <label className="block text-sm font-medium text-[var(--ink-soft)] mb-1">Email</label>
-        <p className="text-sm text-[var(--ink)] py-2 px-3 bg-[var(--paper)] rounded-md border border-[var(--line)]">
-          {initialValues.email}
-        </p>
-      </div>
+          <Separator />
 
-      {/* Country */}
-      <div>
-        <label className={labelClass}>Country</label>
-        <select
-          value={country}
-          onChange={(e) => { setCountry(e.target.value); setStateRegion(''); setCity('') }}
-          required
-          aria-label="Country"
-          className={inputClass}
-        >
-          <option value="">Select country</option>
-          {Country.getAllCountries().map((c) => (
-            <option key={c.isoCode} value={c.isoCode}>{c.name}</option>
-          ))}
-        </select>
-      </div>
+          <section className="space-y-4">
+            <div className="flex items-center gap-2"><MapPin className="size-4 text-[var(--signal)]" /><h3 className="text-sm font-semibold">Location</h3></div>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="space-y-2">
+                <Label htmlFor="profile-country">Country</Label>
+                <NativeSelect id="profile-country" aria-label="Country" value={country} required onChange={(e) => { setCountry(e.target.value); setStateRegion(''); setCity('') }}>
+                  <NativeSelectOption value="">Select country</NativeSelectOption>
+                  {Country.getAllCountries().map((item) => <NativeSelectOption key={item.isoCode} value={item.isoCode}>{item.name}</NativeSelectOption>)}
+                </NativeSelect>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="profile-state">State / Region</Label>
+                <NativeSelect id="profile-state" aria-label="State or Region" value={stateRegion} disabled={!country} required onChange={(e) => { setStateRegion(e.target.value); setCity('') }}>
+                  <NativeSelectOption value="">Select state / region</NativeSelectOption>
+                  {states.map((item) => <NativeSelectOption key={item.isoCode} value={item.isoCode}>{item.name}</NativeSelectOption>)}
+                </NativeSelect>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="profile-city">City</Label>
+                <NativeSelect id="profile-city" aria-label="City" value={city} disabled={!stateRegion} required onChange={(e) => setCity(e.target.value)}>
+                  <NativeSelectOption value="">Select city</NativeSelectOption>
+                  {cities.map((item) => <NativeSelectOption key={item.name} value={item.name}>{item.name}</NativeSelectOption>)}
+                </NativeSelect>
+              </div>
+            </div>
+          </section>
 
-      {/* State / Region */}
-      <div>
-        <label className={labelClass}>State / Region</label>
-        <select
-          value={stateRegion}
-          onChange={(e) => { setStateRegion(e.target.value); setCity('') }}
-          disabled={!country}
-          required
-          aria-label="State or Region"
-          className={inputClass}
-        >
-          <option value="">Select state / region</option>
-          {states.map((s) => (
-            <option key={s.isoCode} value={s.isoCode}>{s.name}</option>
-          ))}
-        </select>
-      </div>
+          <Separator />
 
-      {/* City */}
-      <div>
-        <label className={labelClass}>City</label>
-        <select
-          value={city}
-          onChange={(e) => setCity(e.target.value)}
-          disabled={!stateRegion}
-          required
-          aria-label="City"
-          className={inputClass}
-        >
-          <option value="">Select city</option>
-          {cities.map((c) => (
-            <option key={c.name} value={c.name}>{c.name}</option>
-          ))}
-        </select>
-      </div>
+          <section className="space-y-4">
+            <Label>Years of Experience</Label>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {EXPERIENCE_OPTIONS.map((option) => {
+                const id = `profile-experience-${option.replace(/\W+/g, '-').toLowerCase()}`
+                return (
+                  <Label key={option} htmlFor={id} className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 font-normal transition-colors hover:bg-accent/60 ${experience === option ? 'border-[var(--signal)] bg-accent/60' : 'bg-card'}`}>
+                    <input id={id} type="radio" name="experience" value={option} checked={experience === option} onChange={() => setExperience(option)} aria-label={option} className="size-4 accent-[var(--signal)]" />{option}
+                  </Label>
+                )
+              })}
+            </div>
+          </section>
 
-      {/* Years of experience */}
-      <div>
-        <label className="block text-sm font-medium text-[var(--ink)] mb-2">
-          Years of Experience
-        </label>
-        <div className="space-y-2">
-          {EXPERIENCE_OPTIONS.map((opt) => (
-            <label key={opt} className="flex items-center gap-3 cursor-pointer group">
-              <input
-                type="radio"
-                name="experience"
-                value={opt}
-                checked={experience === opt}
-                onChange={() => setExperience(opt)}
-                className="accent-[var(--action)] w-4 h-4"
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="profile-background">Tech / Non-Tech</Label>
+              <NativeSelect id="profile-background" aria-label="Tech or Non-Tech" value={background} required onChange={(e) => setBackground(e.target.value)}>
+                <NativeSelectOption value="">Select Tech / Non-Tech</NativeSelectOption>
+                {BACKGROUND_OPTIONS.map((option) => <NativeSelectOption key={option} value={option}>{option}</NativeSelectOption>)}
+              </NativeSelect>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="profile-company-name">Company Name / Team Name <span className="font-normal text-muted-foreground">(optional)</span></Label>
+              <Input
+                id="profile-company-name"
+                value={companyName}
+                onChange={(e) => setCompanyName(sanitizeCompanyName(e.target.value))}
+                maxLength={COMPANY_NAME_MAX_LENGTH}
+                pattern="[A-Za-z0-9]*"
+                title="Use letters and numbers only"
+                autoComplete="organization"
+                placeholder="AcmeTeam"
               />
-              <span className="text-sm text-[var(--ink)] group-hover:text-[var(--action)] transition-colors">
-                {opt}
-              </span>
-            </label>
-          ))}
-        </div>
-      </div>
+              <p className="text-xs text-muted-foreground">Letters and numbers only; no spaces.</p>
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="profile-linkedin">LinkedIn Profile <span className="font-normal text-muted-foreground">(optional)</span></Label>
+              <div className="relative"><LinkIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input id="profile-linkedin" type="url" value={linkedin} onChange={(e) => setLinkedin(e.target.value)} placeholder="https://linkedin.com/in/yourname" className="pl-9" /></div>
+            </div>
+          </div>
 
-      {/* Designation */}
-      <div>
-        <label className={labelClass}>Designation</label>
-        <select
-          value={designation}
-          onChange={(e) => setDesignation(e.target.value)}
-          required
-          aria-label="Designation"
-          className={inputClass}
-        >
-          <option value="">Select designation</option>
-          {DESIGNATION_OPTIONS.map((opt) => (
-            <option key={opt} value={opt}>{opt}</option>
-          ))}
-        </select>
-      </div>
+          {error && <p role="alert" className="rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">{error}</p>}
+          {saved && <p role="status" className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700"><CheckCircle2 className="size-4" />Profile saved successfully!</p>}
 
-      {/* Company / Team */}
-      <div>
-        <label className={labelClass} htmlFor="profile-company-name">
-          Company Name / Team Name{' '}
-          <span className="text-[var(--ink-soft)] font-normal">(Optional)</span>
-        </label>
-        <input
-          id="profile-company-name"
-          type="text"
-          value={companyName}
-          onChange={(e) => setCompanyName(sanitizeCompanyName(e.target.value))}
-          maxLength={COMPANY_NAME_MAX_LENGTH}
-          pattern="[A-Za-z0-9]*"
-          title="Use letters and numbers only"
-          autoComplete="organization"
-          placeholder="AcmeTeam"
-          className={inputClass}
-        />
-        <p className="mt-1 text-xs text-[var(--ink-soft)]">Letters and numbers only; no spaces.</p>
-      </div>
-
-      {/* LinkedIn */}
-      <div>
-        <label className={labelClass}>
-          LinkedIn Profile{' '}
-          <span className="text-[var(--ink-soft)] font-normal">(Optional)</span>
-        </label>
-        <input
-          type="url"
-          value={linkedin}
-          onChange={(e) => setLinkedin(e.target.value)}
-          placeholder="https://linkedin.com/in/yourname"
-          className={inputClass}
-        />
-      </div>
-
-      {error && <p className="text-red-500 text-sm">{error}</p>}
-      {saved && (
-        <p className="text-green-600 text-sm font-medium">Profile saved successfully!</p>
-      )}
-
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full bg-[var(--action)] text-white rounded-md px-4 py-3 font-medium hover:bg-[var(--action-hover)] transition-colors disabled:opacity-50"
-      >
-        {loading ? 'Saving...' : 'Save Changes'}
-      </button>
-    </form>
+          <div className="flex justify-end"><Button type="submit" disabled={loading} size="lg" className="w-full sm:w-auto"><Save />{loading ? 'Saving…' : 'Save Changes'}</Button></div>
+        </form>
+      </CardContent>
+    </Card>
   )
 }

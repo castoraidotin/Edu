@@ -23,32 +23,36 @@ export default function HomeSignupForm() {
     setLoading(true)
     setError('')
 
-    const res = await fetch('/api/auth/signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ firstName, lastName, companyName, email, password }),
-    })
-
-    const data = await res.json()
-
-    if (!res.ok) {
-      setError(data.error || 'Something went wrong')
+    let accountCreated = false
+    try {
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ firstName, lastName, companyName, email, password }),
+      })
+      accountCreated = res.ok
+      if (!res.ok) {
+        const data = await res.json()
+        setError(data.error || 'Something went wrong')
+        return
+      }
+      const result = await signIn('credentials', { email, password, redirect: false })
+      router.push(!result || result.error ? '/login' : '/profile/complete')
+    } catch {
+      if (accountCreated) router.push('/login')
+      else setError('Could not create your account. Please check your connection and try again.')
+    } finally {
       setLoading(false)
-      return
     }
+  }
 
-    const result = await signIn('credentials', {
-      email,
-      password,
-      redirect: false,
-    })
-
-    setLoading(false)
-
-    if (result?.error) {
-      router.push('/login')
-    } else {
-      router.push('/dashboard')
+  async function handleGoogleSignup() {
+    trackEvent('signup_started', { method: 'google', location: 'landing' })
+    setError('')
+    try {
+      await signIn('google', { callbackUrl: '/profile/complete' })
+    } catch {
+      setError('Could not open Google sign-in. Please try again.')
     }
   }
 
@@ -64,10 +68,7 @@ export default function HomeSignupForm() {
       {/* Google */}
       <button
         type="button"
-        onClick={() => {
-          trackEvent('signup_started', { method: 'google', location: 'landing' })
-          signIn('google', { callbackUrl: '/dashboard' })
-        }}
+        onClick={handleGoogleSignup}
         className="w-full flex items-center justify-center gap-3 border border-[var(--line)] rounded-md px-4 py-3 text-[var(--ink)] font-medium hover:border-[var(--ink)] transition-colors mb-5"
       >
         <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -89,8 +90,10 @@ export default function HomeSignupForm() {
       <form onSubmit={handleSubmit} className="space-y-3">
         <div className="flex gap-3">
           <div className="flex-1">
-            <label className="block text-sm font-medium text-[var(--ink)] mb-1">First Name</label>
+            <label htmlFor="home-first-name" className="block text-sm font-medium text-[var(--ink)] mb-1">First Name</label>
             <input
+              id="home-first-name"
+              autoComplete="given-name"
               type="text"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
@@ -100,8 +103,10 @@ export default function HomeSignupForm() {
             />
           </div>
           <div className="flex-1">
-            <label className="block text-sm font-medium text-[var(--ink)] mb-1">Last Name</label>
+            <label htmlFor="home-last-name" className="block text-sm font-medium text-[var(--ink)] mb-1">Last Name</label>
             <input
+              id="home-last-name"
+              autoComplete="family-name"
               type="text"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
@@ -113,9 +118,9 @@ export default function HomeSignupForm() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-[var(--ink)] mb-1" htmlFor="home-company-name">
+          <label htmlFor="home-company-name" className="block text-sm font-medium text-[var(--ink)] mb-1">
             Company Name / Team Name{' '}
-            <span className="text-[var(--ink-soft)] font-normal">(Optional)</span>
+            <span className="font-normal text-[var(--ink-soft)]">(optional)</span>
           </label>
           <input
             id="home-company-name"
@@ -133,8 +138,10 @@ export default function HomeSignupForm() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-[var(--ink)] mb-1">Email</label>
+          <label htmlFor="home-email" className="block text-sm font-medium text-[var(--ink)] mb-1">Email</label>
           <input
+            id="home-email"
+            autoComplete="email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -145,8 +152,10 @@ export default function HomeSignupForm() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-[var(--ink)] mb-1">Password</label>
+          <label htmlFor="home-password" className="block text-sm font-medium text-[var(--ink)] mb-1">Password</label>
           <input
+            id="home-password"
+            autoComplete="new-password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -157,7 +166,7 @@ export default function HomeSignupForm() {
           />
         </div>
 
-        {error && <p className="text-red-500 text-sm">{error}</p>}
+        {error && <p role="alert" className="text-red-500 text-sm">{error}</p>}
 
         <button
           type="submit"

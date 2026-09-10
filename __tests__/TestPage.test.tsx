@@ -118,6 +118,40 @@ describe('TestPage', () => {
     expect(tryAgainButton.parentElement).toHaveClass('flex-col', 'sm:flex-row')
   })
 
+  it('renders the immutable certificate returned by the AI result submission', async () => {
+    mockUseParams.mockReturnValue({ domain: 'ai' })
+    mockUseSession.mockReturnValue({
+      status: 'authenticated',
+      data: { user: { name: 'Test Learner', email: 'learner@example.com' } },
+    })
+    ;(global.fetch as jest.Mock)
+      .mockResolvedValueOnce(mockQuestionsResponse())
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          score: 10,
+          certificate: {
+            attemptId: '11111111-1111-4111-8111-111111111111',
+            score: 4,
+            completedAt: '2026-08-01T10:00:00.000Z',
+            topPercent: 40,
+            city: 'Hyderabad',
+          },
+        }),
+      })
+
+    render(<TestPage />)
+    await waitFor(() => expect(screen.getByText('Question 0?')).toBeInTheDocument())
+
+    for (let i = 0; i < 10; i++) answerAndAdvance()
+
+    await waitFor(() => expect(screen.getByText('Your benchmark')).toBeInTheDocument())
+    const certificate = screen.getByTestId('ai-completion-certificate')
+    expect(certificate).toHaveTextContent('Test Learner')
+    expect(certificate).toHaveTextContent(/ranking among the top 40% of all test-takers\./i)
+    expect(certificate).not.toHaveTextContent('4/10')
+  })
+
   describe('Try again resets state for a same-domain retake', () => {
     it('re-fetches fresh questions and resets progress after clicking Try again', async () => {
       ;(global.fetch as jest.Mock)

@@ -13,12 +13,17 @@ jest.mock('@/lib/supabase-server', () => ({
     from: jest.fn(),
   },
 }))
+jest.mock('@/lib/latest-results', () => ({
+  latestResultsForDomain: jest.fn(),
+}))
 
 import { auth } from '@/auth'
 import { supabaseAdmin } from '@/lib/supabase-server'
+import { latestResultsForDomain } from '@/lib/latest-results'
 
 const mockAuth = auth as jest.Mock
 const mockFrom = supabaseAdmin.from as jest.Mock
+const mockLatestResultsForDomain = latestResultsForDomain as jest.Mock
 
 function makeRequest(body: object) {
   return new NextRequest('http://localhost/api/results', {
@@ -198,6 +203,15 @@ describe('POST /api/results', () => {
     // queue intact, and an early-return test (e.g. attempt not found) would
     // leak leftover impls into the next test's .from() calls.
     jest.resetAllMocks()
+    mockLatestResultsForDomain.mockResolvedValue({
+      data: [
+        { user_email: 'test@test.com', score: 8, time_taken_seconds: 100, completed_at: '2026-08-20' },
+        { user_email: 'higher@test.com', score: 10, time_taken_seconds: 100, completed_at: '2026-08-20' },
+        { user_email: 'lower-a@test.com', score: 4, time_taken_seconds: 100, completed_at: '2026-08-20' },
+        { user_email: 'lower-b@test.com', score: 2, time_taken_seconds: 100, completed_at: '2026-08-20' },
+      ],
+      error: null,
+    })
   })
 
   it('returns 401 when not authenticated', async () => {
@@ -214,7 +228,7 @@ describe('POST /api/results', () => {
 
   it('returns 400 when attempt_id is missing', async () => {
     mockAuth.mockResolvedValue({ user: { email: 'test@test.com' } })
-    const { attempt_id: _, ...noAttempt } = validPayload
+    const noAttempt = { domain: validPayload.domain, answers: validPayload.answers }
     const res = await POST(makeRequest(noAttempt))
     expect(res.status).toBe(400)
     expect((await res.json()).error).toBe('Invalid quiz attempt')
@@ -246,6 +260,94 @@ describe('POST /api/results', () => {
     const body = await res.json()
     // q-1..q-9 correctness pattern → score = 8
     expect(body.score).toBe(8)
+  })
+
+  it('returns the locked first-attempt certificate after an AI retake', async () => {
+    mockAuth.mockResolvedValue({ user: { email: 'test@test.com', id: 'uid-1' } })
+    const firstAttemptId = '11111111-1111-4111-8111-111111111111'
+    const certificateQuery = {
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      not: jest.fn().mockReturnThis(),
+      order: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      maybeSingle: jest.fn().mockResolvedValue({
+        data: {
+          id: 'first-result',
+          quiz_attempt_id: firstAttemptId,
+          score: 5,
+          completed_at: '2026-08-01T10:00:00.000Z',
+        },
+        error: null,
+      }),
+    }
+
+    mockFrom
+      .mockImplementationOnce(() => ({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({
+                data: {
+                  id: 'attempt-1',
+                  domain: 'ai',
+                  question_ids: QUESTION_IDS,
+                  started_at: new Date(Date.now() - 30_000).toISOString(),
+                  expires_at: new Date(Date.now() + 300_000).toISOString(),
+                  completed_at: null,
+                },
+                error: null,
+              }),
+            }),
+          }),
+        }),
+      }))
+      .mockImplementationOnce(() => ({
+        select: jest.fn().mockReturnValue({
+          in: jest.fn().mockReturnValue({
+            eq: jest.fn().mockResolvedValue({ data: mockDbQuestions, error: null }),
+          }),
+        }),
+      }))
+      .mockImplementationOnce(() => ({ insert: jest.fn().mockResolvedValue({ error: null }) }))
+      .mockImplementationOnce(() => ({
+        update: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            is: jest.fn().mockResolvedValue({ error: null }),
+          }),
+        }),
+      }))
+      .mockImplementationOnce(() => certificateQuery)
+      .mockImplementationOnce((table: string) => {
+        expect(table).toBe('profiles')
+        return {
+          select: jest.fn().mockReturnValue({
+            in: jest.fn().mockResolvedValue({
+              data: [
+                { email: 'test@test.com', city: 'Hyderabad' },
+                { email: 'higher@test.com', city: 'Hyderabad' },
+                { email: 'lower-a@test.com', city: 'Hyderabad' },
+                { email: 'lower-b@test.com', city: 'Hyderabad' },
+              ],
+              error: null,
+            }),
+          }),
+        }
+      })
+
+    const res = await POST(makeRequest({ ...validPayload, domain: 'ai' }))
+    expect(res.status).toBe(200)
+    await expect(res.json()).resolves.toEqual({
+      score: 8,
+      certificate: {
+        attemptId: firstAttemptId,
+        score: 5,
+        completedAt: '2026-08-01T10:00:00.000Z',
+        topPercent: 50,
+        cohortSize: 4,
+        city: 'Hyderabad',
+      },
+    })
   })
 
   it('returns 400 when the attempt does not exist for this user', async () => {
@@ -332,7 +434,7 @@ describe('POST /api/results', () => {
 
   it('returns 400 when answers field is missing', async () => {
     mockAuth.mockResolvedValue({ user: { email: 'test@test.com' } })
-    const { answers: _, ...noAnswers } = validPayload
+    const noAnswers = { domain: validPayload.domain, attempt_id: validPayload.attempt_id }
     const res = await POST(makeRequest(noAnswers))
     expect(res.status).toBe(400)
     expect((await res.json()).error).toBe('Invalid answers')

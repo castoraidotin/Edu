@@ -12,14 +12,14 @@ describe('DomainSelector tracking', () => {
 
   it('fires domain_selected with the chosen domain when Start Test is confirmed', () => {
     render(<DomainSelector />)
-    fireEvent.click(screen.getByText('DevOps & CI/CD'))
+    fireEvent.click(screen.getByRole('button', { name: 'Select Artificial Intelligence & Generative AI assessment' }))
     fireEvent.click(screen.getByText('Start Test'))
-    expect(mockTrackEvent).toHaveBeenCalledWith('domain_selected', { domain: 'devops' })
+    expect(mockTrackEvent).toHaveBeenCalledWith('domain_selected', { domain: 'ai' })
   })
 
   it('does not fire domain_selected until Start Test is confirmed', () => {
     render(<DomainSelector />)
-    fireEvent.click(screen.getByText('DevOps & CI/CD'))
+    fireEvent.click(screen.getByRole('button', { name: 'Select Artificial Intelligence & Generative AI assessment' }))
     expect(mockTrackEvent).not.toHaveBeenCalled()
   })
 })

@@ -43,6 +43,10 @@ describe('SignupPage', () => {
   it('renders the Create Account heading', () => {
     render(<SignupPage />)
     expect(screen.getByRole('heading', { name: 'Create Account' })).toBeInTheDocument()
+    expect(screen.getByText('Sign up to start your assessment')).toBeInTheDocument()
+    expect(screen.getByText(/^or$/i)).toBeInTheDocument()
+    expect(screen.queryByText(/or use email/i)).not.toBeInTheDocument()
+    expect(screen.queryByText('Minimum 8 characters')).not.toBeInTheDocument()
   })
 
   it('renders a link back to login', () => {
@@ -64,7 +68,7 @@ describe('SignupPage', () => {
     mockSignIn.mockResolvedValueOnce({})
     render(<SignupPage />)
     fireEvent.click(screen.getByRole('button', { name: /continue with google/i }))
-    expect(mockSignIn).toHaveBeenCalledWith('google', { callbackUrl: '/dashboard' })
+    expect(mockSignIn).toHaveBeenCalledWith('google', { callbackUrl: '/profile/complete' })
   })
 
   it('shows error message returned from API', async () => {
@@ -84,7 +88,7 @@ describe('SignupPage', () => {
     })
   })
 
-  it('calls signIn after successful signup and redirects to dashboard', async () => {
+  it('calls signIn after successful signup and opens profile completion', async () => {
     const push = jest.fn()
     mockUseRouter.mockReturnValue({ push })
     mockFetch.mockResolvedValueOnce({
@@ -110,7 +114,7 @@ describe('SignupPage', () => {
         password: 'password123',
         redirect: false,
       })
-      expect(push).toHaveBeenCalledWith('/dashboard')
+      expect(push).toHaveBeenCalledWith('/profile/complete')
     })
   })
 

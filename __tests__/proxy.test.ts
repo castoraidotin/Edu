@@ -51,13 +51,14 @@ describe('proxy middleware', () => {
     expect(result).toBeUndefined()
   })
 
-  it('exports a matcher that includes protected routes but excludes login/signup/api', async () => {
+  it('exports a matcher that includes protected routes but excludes public routes', async () => {
     const { config } = await import('@/proxy')
     expect(config.matcher).toBeDefined()
     const pattern = config.matcher[0]
     expect(pattern).toContain('login')
     expect(pattern).toContain('signup')
     expect(pattern).toContain('api')
+    expect(pattern).toContain('certificate')
   })
 
   // Checking the matcher string for substrings (above) isn't enough to catch a
@@ -75,6 +76,8 @@ describe('proxy middleware', () => {
     expect(matcher.test('/login')).toBe(false)
     expect(matcher.test('/signup')).toBe(false)
     expect(matcher.test('/api/stats')).toBe(false)
+    expect(matcher.test('/certificate/b96f36e2-4ba8-409d-9bae-061904ebad0b')).toBe(false)
+    expect(matcher.test('/certificate/b96f36e2-4ba8-409d-9bae-061904ebad0b/opengraph-image')).toBe(false)
     expect(matcher.test('/favicon.ico')).toBe(false)
 
     // logo.jpg is a public asset — without this exclusion, logged-out

@@ -27,7 +27,7 @@ describe('ResultsScreen', () => {
     render(<ResultsScreen domain="ai" score={6} onTryAgain={onTryAgain} />)
 
     expect(screen.getByText('Your benchmark')).toBeInTheDocument()
-    expect(screen.getByText('Artificial Intelligence & Generative AI')).toBeInTheDocument()
+    expect(screen.getAllByText('Artificial Intelligence & Generative AI')).not.toHaveLength(0)
     expect(screen.getByText('6')).toBeInTheDocument()
     expect(screen.getByText('Average')).toBeInTheDocument()
   })
@@ -171,16 +171,76 @@ describe('ResultsScreen', () => {
     })
   })
 
-  describe('share button removed', () => {
-    // LinkedIn share intentionally isn't rendered — LinkedIn blocks
-    // pre-filled compose text from external sites, so any "share" button
-    // would force the user to paste manually. Replaced by the
-    // add-to-LinkedIn certificate flow (see TODO). This test pins the removal
-    // so a future refactor doesn't silently reintroduce it.
-    it('does not render a LinkedIn share button on the results screen', () => {
+  describe('AI completion certificate', () => {
+    it('shows a personalized certificate after an AI assessment', () => {
+      render(
+        <ResultsScreen
+          domain="ai"
+          score={8}
+          recipientName="Shanthan Kumar"
+          certificate={{
+            attemptId: '12345678-abcd-efgh',
+            score: 8,
+            completedAt: '2026-08-26T12:00:00.000Z',
+            topPercent: 10,
+            city: 'Hyderabad',
+          }}
+          onTryAgain={onTryAgain}
+        />
+      )
+
+      const certificate = screen.getByTestId('ai-completion-certificate')
+      const scrollPrompt = screen.getByRole('link', { name: /Scroll down to view your certificate\./i })
+      expect(scrollPrompt).toHaveAttribute('href', '#completion-certificate')
+      expect(scrollPrompt).toHaveClass('fixed', 'right-4', 'top-4', 'z-50')
+      expect(certificate).toHaveTextContent('Your certificate is ready')
+      expect(
+        screen.getByRole('heading', { name: 'Your benchmark' }).compareDocumentPosition(certificate) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
+      expect(certificate).toHaveTextContent('Shanthan Kumar')
+      expect(certificate).toHaveTextContent('EDU-AI-12345678AB')
+      expect(certificate).toHaveTextContent(/ranking among the top 10% of all test-takers\./i)
+      expect(screen.getByRole('button', { name: /Share certificate/i })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /Download PNG/i })).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: /Share on LinkedIn/i })).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: /Share on Twitter\/X/i })).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: /Share on Facebook/i })).toBeInTheDocument()
+    })
+
+    it('does not show the certificate after a non-AI assessment', () => {
+      render(<ResultsScreen domain="cloud" score={8} onTryAgain={onTryAgain} />)
+      expect(screen.queryByTestId('ai-completion-certificate')).not.toBeInTheDocument()
+    })
+
+    it('keeps scores off the shareable certificate after an AI retake', () => {
+      render(
+        <ResultsScreen
+          domain="ai"
+          score={10}
+          recipientName="Shanthan Kumar"
+          certificate={{
+            attemptId: '12345678-abcd-efgh',
+            score: 6,
+            completedAt: '2026-08-26T12:00:00.000Z',
+            topPercent: 25,
+            city: 'Hyderabad',
+          }}
+          onTryAgain={onTryAgain}
+        />
+      )
+
+      expect(screen.getByRole('heading', { name: 'Your benchmark' }).parentElement).toHaveTextContent('10 / 10')
+      const certificate = screen.getByTestId('ai-completion-certificate')
+      expect(certificate).toHaveTextContent(/ranking among the top 25% of all test-takers\./i)
+      expect(certificate).not.toHaveTextContent('6/10')
+      expect(certificate).not.toHaveTextContent('10/10')
+    })
+
+    it('does not mint a certificate client-side without an issued first-attempt record', () => {
       render(<ResultsScreen domain="ai" score={8} onTryAgain={onTryAgain} />)
-      expect(screen.queryByTestId('results-share-linkedin')).not.toBeInTheDocument()
-      expect(screen.queryByText(/Share on LinkedIn/i)).not.toBeInTheDocument()
+      expect(screen.queryByTestId('ai-completion-certificate')).not.toBeInTheDocument()
+      expect(screen.queryByText('Scroll down to view your certificate.')).not.toBeInTheDocument()
     })
   })
 
@@ -195,6 +255,18 @@ describe('ResultsScreen', () => {
       render(<ResultsScreen domain="ai" score={4} onTryAgain={onTryAgain} />)
       fireEvent.click(screen.getByRole('button', { name: /Dashboard/i }))
       expect(push).toHaveBeenCalledWith('/dashboard')
+    })
+
+    it('places a highlighted Insights action after Dashboard and routes to the selected domain', () => {
+      render(<ResultsScreen domain="ai" score={4} onTryAgain={onTryAgain} />)
+
+      const dashboard = screen.getByRole('button', { name: /Dashboard/i })
+      const insights = screen.getByRole('button', { name: /Insights/i })
+      expect(dashboard.compareDocumentPosition(insights) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+      expect(insights).toHaveClass('results-insights-button')
+
+      fireEvent.click(insights)
+      expect(push).toHaveBeenCalledWith('/stats?domain=ai')
     })
   })
 })

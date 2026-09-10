@@ -8,7 +8,7 @@ export default function Logo() {
       alt="Edu by Castor AI"
       width={140}
       height={69}
-      className="h-12 w-auto"
+      className="h-12 w-auto mix-blend-multiply dark:invert dark:mix-blend-screen"
       priority
     />
   )

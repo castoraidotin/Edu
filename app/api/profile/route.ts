@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-server'
-import { EXPERIENCE_OPTIONS } from '@/lib/profile-options'
+import { BACKGROUND_OPTIONS, EXPERIENCE_OPTIONS } from '@/lib/profile-options'
 import { requireSession } from '@/lib/session'
 import { getCompanyNameError } from '@/lib/company-name'
 
@@ -55,7 +55,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Years of experience is required' }, { status: 400 })
   }
   if (!designation?.trim()) {
-    return NextResponse.json({ error: 'Designation is required' }, { status: 400 })
+    return NextResponse.json({ error: 'Tech / Non-Tech selection is required' }, { status: 400 })
   }
 
   // Cap text field lengths to keep the database and downstream UI safe from
@@ -65,7 +65,7 @@ export async function PATCH(req: NextRequest) {
     ['Country', country],
     ['State/Region', state_region],
     ['City', city],
-    ['Designation', designation],
+    ['Tech / Non-Tech', designation],
   ]
   for (const [label, value] of fieldsToCheck) {
     if (value.trim().length > MAX_FIELD_LENGTH) {
@@ -75,6 +75,9 @@ export async function PATCH(req: NextRequest) {
 
   if (!EXPERIENCE_OPTIONS.includes(years_of_experience)) {
     return NextResponse.json({ error: 'Invalid years of experience value' }, { status: 400 })
+  }
+  if (!BACKGROUND_OPTIONS.includes(designation.trim() as (typeof BACKGROUND_OPTIONS)[number])) {
+    return NextResponse.json({ error: 'Invalid Tech / Non-Tech value' }, { status: 400 })
   }
 
   const companyNameError = getCompanyNameError(company_name)

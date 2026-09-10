@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react'
 import type { Domain } from '@/lib/types'
 import { crowdFilterParams } from '@/lib/crowd-filter-params'
+import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 interface LeaderboardEntry {
   name: string
@@ -56,7 +59,7 @@ export default function Leaderboard({ domain, designation, experience, country, 
   }, [domain, designation, experience, country, state_region, city])
 
   if (error) return <p className="text-red-600 text-sm">{error}</p>
-  if (!entries) return <p className="text-[var(--ink-soft)] text-sm animate-pulse">Loading leaderboard…</p>
+  if (!entries) return <div className="space-y-2"><Skeleton className="h-10" /><Skeleton className="h-10" /><Skeleton className="h-10" /></div>
   if (entries.length === 0 && suppressedCount !== null) {
     return (
       <p className="text-[var(--ink-soft)] text-sm">
@@ -68,22 +71,20 @@ export default function Leaderboard({ domain, designation, experience, country, 
   if (entries.length === 0) return <p className="text-[var(--ink-soft)] text-sm">No attempts yet for this domain.</p>
 
   return (
-    <ol data-testid="leaderboard" className="divide-y divide-[var(--line)]">
+    <Table data-testid="leaderboard">
+      <TableHeader><TableRow className="hover:bg-transparent"><TableHead className="w-16">Rank</TableHead><TableHead>Name</TableHead><TableHead className="text-right">Score</TableHead></TableRow></TableHeader>
+      <TableBody>
       {entries.map((entry, i) => (
-        <li
+        <TableRow
           key={`${entry.name}-${i}`}
-          className={`flex items-center justify-between py-2.5 px-2 rounded-md ${entry.isYou ? 'bg-[var(--signal-soft)]' : ''}`}
+          className={entry.isYou ? 'bg-accent/70 hover:bg-accent' : ''}
         >
-          <span className="flex items-center gap-3">
-            <span className="w-6 font-mono text-sm font-semibold text-[var(--ink-soft)]">{i + 1}</span>
-            <span className={`text-sm ${entry.isYou ? 'font-semibold text-[var(--action)]' : 'text-[var(--ink)]'}`}>
-              {entry.name}
-              {entry.isYou ? ' (you)' : ''}
-            </span>
-          </span>
-          <span className="font-mono text-sm font-bold text-[var(--ink)]">{entry.score}/10</span>
-        </li>
+          <TableCell className="font-mono text-sm font-semibold text-muted-foreground">{String(i + 1).padStart(2, '0')}</TableCell>
+          <TableCell className={entry.isYou ? 'font-semibold text-primary' : ''}>{entry.name}{entry.isYou && <Badge variant="secondary" className="ml-2 text-[10px]">(you)</Badge>}</TableCell>
+          <TableCell className="text-right font-mono text-sm font-bold">{entry.score}/10</TableCell>
+        </TableRow>
       ))}
-    </ol>
+      </TableBody>
+    </Table>
   )
 }

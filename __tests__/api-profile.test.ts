@@ -22,7 +22,7 @@ const validPatch = {
   state_region: 'Telangana',
   city: 'Hyderabad',
   years_of_experience: '1-3 years',
-  designation: 'Software Engineer',
+  designation: 'Tech',
   linkedin_url: 'https://linkedin.com/in/test',
   company_name: 'AcmeTeam42',
 }
@@ -120,11 +120,18 @@ describe('PATCH /api/profile', () => {
     expect((await res.json()).error).toBe('Years of experience is required')
   })
 
-  it('returns 400 when designation is missing', async () => {
+  it('returns 400 when Tech / Non-Tech is missing', async () => {
     mockAuth.mockResolvedValue(authedSession)
     const res = await PATCH(makePatchRequest({ ...validPatch, designation: '' }))
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toBe('Designation is required')
+    expect((await res.json()).error).toBe('Tech / Non-Tech selection is required')
+  })
+
+  it('returns 400 for an invalid Tech / Non-Tech value', async () => {
+    mockAuth.mockResolvedValue(authedSession)
+    const res = await PATCH(makePatchRequest({ ...validPatch, designation: 'Data Scientist' }))
+    expect(res.status).toBe(400)
+    expect((await res.json()).error).toBe('Invalid Tech / Non-Tech value')
   })
 
   it('returns 400 for invalid years_of_experience value', async () => {
@@ -273,11 +280,11 @@ describe('PATCH /api/profile', () => {
     expect((await res.json()).error).toMatch(/City/)
   })
 
-  it('returns 400 when designation exceeds max length', async () => {
+  it('returns 400 when the background value exceeds max length', async () => {
     mockAuth.mockResolvedValue(authedSession)
     const res = await PATCH(makePatchRequest({ ...validPatch, designation: 'a'.repeat(201) }))
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toMatch(/Designation/)
+    expect((await res.json()).error).toMatch(/Tech \/ Non-Tech/)
   })
 
   it('accepts a field exactly at the max length boundary', async () => {

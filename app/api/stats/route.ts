@@ -185,9 +185,12 @@ export async function GET(req: NextRequest) {
   // doesn't mix places from different countries into one ranking.
   const countryParam = locationParams.country?.trim()
   const countryFilterActive = !!countryParam && countryParam !== 'all'
-  const countryMatchingEmails = countryFilterActive
-    ? [...latestByEmail.keys()].filter((email) => profileByEmail.get(email)?.country === countryParam)
-    : [...latestByEmail.keys()]
+  const launchCityOnly = req.nextUrl.searchParams.get('launch_city_only') === 'true'
+  const countryMatchingEmails = launchCityOnly
+    ? matchingEmails
+    : countryFilterActive
+      ? [...latestByEmail.keys()].filter((email) => profileByEmail.get(email)?.country === countryParam)
+      : [...latestByEmail.keys()]
   const countryEntries = buildEntries(countryMatchingEmails)
 
   const histogram = new Array(11).fill(0)
@@ -315,11 +318,8 @@ export async function GET(req: NextRequest) {
     // (your country's) crowd, not just the ones who also happen to match
     // whatever Designation/Experience/City/State filters are active.
     peerGroupRanks: buildPeerGroupRanks(countryEntries, session.user.email, [
-      { dimension: 'Role', getLabel: (entry) => entry.profile.designation },
+      { dimension: 'Background', getLabel: (entry) => entry.profile.designation },
       { dimension: 'Experience', getLabel: (entry) => entry.profile.years_of_experience },
-      { dimension: 'City', getLabel: (entry) => entry.profile.city },
-      { dimension: 'State / Region', getLabel: (entry) => entry.profile.state_region },
-      { dimension: 'Country', getLabel: (entry) => entry.profile.country },
     ]),
     topCitiesByScore: buildTopCities(cityGroupsByScore, userCity, LEADERBOARD_SIZE),
     topCitiesByParticipation: buildTopCities(cityGroupsByParticipation, userCity, LEADERBOARD_SIZE),

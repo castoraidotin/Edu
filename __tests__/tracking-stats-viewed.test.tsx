@@ -48,11 +48,11 @@ describe('Stats page tracking', () => {
     expect(mockTrackEvent).not.toHaveBeenCalledWith('stats_viewed', { domain: 'not-a-real-domain' })
   })
 
-  it('fires stats_viewed with a valid domain param as-is', async () => {
+  it('falls back to AI when another domain is requested on the AI-only Stats page', async () => {
     mockUseSearchParams.mockReturnValue(new URLSearchParams({ domain: 'cloud' }))
     render(<StatsPage />)
     await waitFor(() =>
-      expect(mockTrackEvent).toHaveBeenCalledWith('stats_viewed', { domain: 'cloud' })
+      expect(mockTrackEvent).toHaveBeenCalledWith('stats_viewed', { domain: 'ai' })
     )
   })
 })

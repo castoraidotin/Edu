@@ -24,13 +24,11 @@ export default async function Home() {
   if (session) redirect('/dashboard')
 
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--paper)]">
+    <div className="landing-light min-h-screen flex flex-col bg-[var(--paper)]">
       <PageViewTracker event="landing_viewed" />
       {/* Nav — scrolls away as the hero card takes over, unchanged from before */}
-      <header className="px-4 sm:px-8 py-4 bg-[var(--surface)] border-b border-[var(--line)] flex items-center justify-between">
+      <header className="flex items-center justify-between border-b border-[var(--line)] bg-[var(--surface)] px-4 py-4 sm:px-8">
         <Logo />
-        {/* Shorter label on phones so it never wraps against the logo;
-            full text restored from sm: up, unchanged from before. */}
         <Link
           href="/login"
           className="text-sm font-medium text-[var(--action)] hover:text-[var(--action-hover)] transition-colors whitespace-nowrap"
@@ -133,7 +131,7 @@ export default async function Home() {
 
       {/* Statistics — a more detailed, static counterpart to the compact
           stats panel shown inside the preview above */}
-      <section className="relative lg:sticky lg:top-0 z-20 lg:min-h-screen flex flex-col justify-center bg-[var(--paper)] px-6 sm:px-8 lg:px-16 xl:px-24 py-12 lg:py-10">
+      <section className="relative overflow-x-clip lg:sticky lg:top-0 z-20 lg:min-h-screen flex flex-col justify-center bg-[var(--paper)] px-6 sm:px-8 lg:px-16 xl:px-24 py-12 lg:py-10">
         <div className="max-w-6xl mx-auto w-full">
           <Reveal className="max-w-2xl">
             <p className="font-mono text-xs font-semibold uppercase tracking-widest text-[var(--signal)] mb-3">

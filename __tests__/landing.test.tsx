@@ -38,4 +38,5 @@ describe('Landing page', () => {
     const result = await Home()
     expect(result).toBeDefined()
   })
+
 })

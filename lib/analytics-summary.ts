@@ -26,7 +26,12 @@ export interface AnalyticsSummary {
   countsByEvent: Record<string, number>
   countsByDomain: Record<string, number>
   countsByCtaLocation: Record<string, number>
+  // Combined across every domain, not per-visitor — a visitor who retakes
+  // the quiz contributes one entry per completion. quizCompletionCount is
+  // what averageQuizScore is averaged over, so the UI can show "N completions"
+  // instead of a bare, ambiguous number.
   averageQuizScore: number | null
+  quizCompletionCount: number
   recentEvents: {
     eventName: FunnelEvent['name']
     props: Record<string, unknown> | null
@@ -113,6 +118,7 @@ export async function getAnalyticsSummary(): Promise<AnalyticsSummary | null> {
     countsByDomain: toCounts(visitorsByDomain),
     countsByCtaLocation: toCounts(visitorsByCtaLocation),
     averageQuizScore: quizCompletedCount > 0 ? quizCompletedScoreSum / quizCompletedCount : null,
+    quizCompletionCount: quizCompletedCount,
     recentEvents: events.slice(0, RECENT_FEED_LIMIT).map((row) => ({
       eventName: row.event_name,
       props: row.event_props,
