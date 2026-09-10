@@ -14,7 +14,7 @@ export default async function ProfilePage() {
 
   const { data: profile } = await supabaseAdmin
     .from('profiles')
-    .select('full_name, email, country, state_region, city, years_of_experience, designation, linkedin_url')
+    .select('full_name, email, country, state_region, city, years_of_experience, designation, linkedin_url, company_name')
     .eq('email', session.user?.email)
     .single()
 
@@ -42,6 +42,7 @@ export default async function ProfilePage() {
             years_of_experience: profile?.years_of_experience ?? '',
             designation: profile?.designation ?? '',
             linkedin_url: profile?.linkedin_url ?? '',
+            company_name: profile?.company_name ?? '',
           }}
         />
       </div>

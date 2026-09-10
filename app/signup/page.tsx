@@ -11,12 +11,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { trackEvent } from '@/lib/analytics'
+import { COMPANY_NAME_MAX_LENGTH, sanitizeCompanyName } from '@/lib/company-name'
 
 export default function SignupPage() {
   const router = useRouter()
   const { data: session, status } = useSession()
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
+  const [companyName, setCompanyName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -39,7 +41,7 @@ export default function SignupPage() {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ firstName, lastName, email, password }),
+        body: JSON.stringify({ firstName, lastName, companyName, email, password }),
       })
       accountCreated = res.ok
       if (!res.ok) {
@@ -95,6 +97,21 @@ export default function SignupPage() {
             <Label htmlFor="signup-last-name">Last Name</Label>
             <Input id="signup-last-name" value={lastName} onChange={(e) => setLastName(e.target.value)} required autoComplete="family-name" placeholder="Doe" className="h-10 bg-white" />
           </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="signup-company-name">Company Name / Team Name <span className="font-normal text-muted-foreground">(optional)</span></Label>
+          <Input
+            id="signup-company-name"
+            value={companyName}
+            onChange={(e) => setCompanyName(sanitizeCompanyName(e.target.value))}
+            maxLength={COMPANY_NAME_MAX_LENGTH}
+            pattern="[A-Za-z0-9]*"
+            title="Use letters and numbers only"
+            autoComplete="organization"
+            placeholder="AcmeTeam"
+            className="h-10 bg-white"
+          />
+          <p className="text-xs text-muted-foreground">Letters and numbers only; no spaces.</p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="signup-email">Email</Label>

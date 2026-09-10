@@ -41,6 +41,7 @@ const defaultProps = {
     years_of_experience: '5-10 years',
     designation: 'Tech',
     linkedin_url: '',
+    company_name: 'AcmeTeam',
   },
 }
 
@@ -57,6 +58,15 @@ describe('ProfileEditForm', () => {
     render(<ProfileEditForm {...defaultProps} />)
     const select = screen.getByLabelText('Tech or Non-Tech') as HTMLSelectElement
     expect(select.tagName).toBe('SELECT')
+  })
+
+  it('renders the optional company/team name and sanitizes edits', () => {
+    render(<ProfileEditForm {...defaultProps} />)
+    const companyName = screen.getByLabelText(/Company Name \/ Team Name/i) as HTMLInputElement
+    expect(companyName.value).toBe('AcmeTeam')
+    expect(companyName).not.toBeRequired()
+    fireEvent.change(companyName, { target: { value: 'New Team!_42' } })
+    expect(companyName.value).toBe('NewTeam42')
   })
 
   it('pre-selects the background from initialValues when it matches an option', () => {
@@ -95,6 +105,7 @@ describe('ProfileEditForm', () => {
       const [, options] = mockFetch.mock.calls[0]
       const body = JSON.parse(options.body)
       expect(body.designation).toBe('Non-Tech')
+      expect(body.company_name).toBe('AcmeTeam')
     })
   })
 

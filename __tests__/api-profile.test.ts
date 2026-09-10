@@ -24,6 +24,7 @@ const validPatch = {
   years_of_experience: '1-3 years',
   designation: 'Tech',
   linkedin_url: 'https://linkedin.com/in/test',
+  company_name: 'AcmeTeam42',
 }
 
 function makePatchRequest(body: object) {
@@ -169,6 +170,7 @@ describe('PATCH /api/profile', () => {
     expect(updatedData.country).toBe('India')
     expect(updatedData.state_region).toBe('Telangana')
     expect(updatedData.city).toBe('Hyderabad')
+    expect(updatedData.company_name).toBe('AcmeTeam42')
   })
 
   it('returns 200 when linkedin_url is omitted (optional)', async () => {
@@ -185,6 +187,44 @@ describe('PATCH /api/profile', () => {
     }
     const res = await PATCH(makePatchRequest(noLinkedin))
     expect(res.status).toBe(200)
+  })
+
+  it('returns 200 when company_name is omitted (optional)', async () => {
+    mockAuth.mockResolvedValue(authedSession)
+    let updatedData: Record<string, unknown> = {}
+    mockFrom.mockReturnValue({
+      upsert: jest.fn().mockImplementation((data) => {
+        updatedData = data
+        return Promise.resolve({ error: null })
+      }),
+    })
+    const withoutCompanyName = {
+      country: validPatch.country,
+      state_region: validPatch.state_region,
+      city: validPatch.city,
+      years_of_experience: validPatch.years_of_experience,
+      designation: validPatch.designation,
+      linkedin_url: validPatch.linkedin_url,
+    }
+    const res = await PATCH(makePatchRequest(withoutCompanyName))
+    expect(res.status).toBe(200)
+    expect(updatedData).not.toHaveProperty('company_name')
+  })
+
+  it('rejects spaces and special characters in company_name', async () => {
+    mockAuth.mockResolvedValue(authedSession)
+    for (const company_name of ['Acme Team', 'Acme-Team', 'Acme_Team', 'Acme!']) {
+      const res = await PATCH(makePatchRequest({ ...validPatch, company_name }))
+      expect(res.status).toBe(400)
+      expect((await res.json()).error).toMatch(/letters and numbers/)
+    }
+  })
+
+  it('returns 400 when company_name exceeds max length', async () => {
+    mockAuth.mockResolvedValue(authedSession)
+    const res = await PATCH(makePatchRequest({ ...validPatch, company_name: 'a'.repeat(101) }))
+    expect(res.status).toBe(400)
+    expect((await res.json()).error).toMatch(/100 characters/)
   })
 
   it('returns 500 on database error', async () => {

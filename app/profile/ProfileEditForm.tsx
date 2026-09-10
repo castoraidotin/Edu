@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Separator } from '@/components/ui/separator'
+import { COMPANY_NAME_MAX_LENGTH, sanitizeCompanyName } from '@/lib/company-name'
 import { BACKGROUND_OPTIONS, EXPERIENCE_OPTIONS } from '@/lib/profile-options'
 
 interface Props {
@@ -21,6 +22,7 @@ interface Props {
     years_of_experience: string
     designation: string
     linkedin_url: string
+    company_name: string
   }
 }
 
@@ -45,6 +47,7 @@ export default function ProfileEditForm({ initialValues }: Props) {
   const [experience, setExperience] = useState(initialValues.years_of_experience)
   const [background, setBackground] = useState(initialBackground)
   const [linkedin, setLinkedin] = useState(initialValues.linkedin_url)
+  const [companyName, setCompanyName] = useState(initialValues.company_name)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
@@ -69,6 +72,7 @@ export default function ProfileEditForm({ initialValues }: Props) {
           years_of_experience: experience,
           designation: background,
           linkedin_url: linkedin,
+          company_name: companyName,
         }),
       })
       if (!res.ok) {
@@ -151,6 +155,20 @@ export default function ProfileEditForm({ initialValues }: Props) {
               </NativeSelect>
             </div>
             <div className="space-y-2">
+              <Label htmlFor="profile-company-name">Company Name / Team Name <span className="font-normal text-muted-foreground">(optional)</span></Label>
+              <Input
+                id="profile-company-name"
+                value={companyName}
+                onChange={(e) => setCompanyName(sanitizeCompanyName(e.target.value))}
+                maxLength={COMPANY_NAME_MAX_LENGTH}
+                pattern="[A-Za-z0-9]*"
+                title="Use letters and numbers only"
+                autoComplete="organization"
+                placeholder="AcmeTeam"
+              />
+              <p className="text-xs text-muted-foreground">Letters and numbers only; no spaces.</p>
+            </div>
+            <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="profile-linkedin">LinkedIn Profile <span className="font-normal text-muted-foreground">(optional)</span></Label>
               <div className="relative"><LinkIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input id="profile-linkedin" type="url" value={linkedin} onChange={(e) => setLinkedin(e.target.value)} placeholder="https://linkedin.com/in/yourname" className="pl-9" /></div>
             </div>

@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { isRateLimited } from '@/lib/rate-limit'
+import { getCompanyNameError } from '@/lib/company-name'
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,19 +16,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unable to create account' }, { status: 503 })
   }
 
-  let body: { firstName?: string; lastName?: string; email?: string; password?: string }
+  let body: { firstName?: string; lastName?: string; companyName?: string; email?: string; password?: string }
   try {
     body = await req.json()
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const { firstName, lastName, email, password } = body
+  const { firstName, lastName, companyName, email, password } = body
 
   if (!firstName?.trim()) return NextResponse.json({ error: 'First name is required' }, { status: 400 })
   if (!lastName?.trim()) return NextResponse.json({ error: 'Last name is required' }, { status: 400 })
   if (!email?.trim()) return NextResponse.json({ error: 'Email is required' }, { status: 400 })
   if (!password) return NextResponse.json({ error: 'Password is required' }, { status: 400 })
+
+  const companyNameError = getCompanyNameError(companyName)
+  if (companyNameError) {
+    return NextResponse.json({ error: companyNameError }, { status: 400 })
+  }
 
   // Reasonable max-length limits so oversized payloads can't be stored.
   const MAX_NAME_LENGTH = 100
@@ -82,11 +88,13 @@ export async function POST(req: NextRequest) {
 
   const trimmedFirst = firstName.trim()
   const trimmedLast = lastName.trim()
+  const trimmedCompanyName = companyName?.trim() || null
   const { error: insertError } = await supabaseAdmin.from('profiles').insert({
     email: email.toLowerCase(),
     first_name: trimmedFirst,
     last_name: trimmedLast,
     full_name: `${trimmedFirst} ${trimmedLast}`,
+    company_name: trimmedCompanyName,
     password_hash,
   })
 
