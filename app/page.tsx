@@ -201,8 +201,14 @@ export default async function Home() {
       </section>
 
       {/* Footer — plain flow, appears once the last card has been scrolled past */}
-      <footer className="relative z-50 py-5 border-t border-[var(--line)] bg-[var(--paper)] text-center">
-        <p className="text-sm text-[var(--ink-soft)]">© 2026 Castor AI. All rights reserved.</p>
+      <footer className="relative z-50 border-t border-[var(--line)] bg-[var(--paper)] px-5 py-5">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 text-sm text-[var(--ink-soft)] sm:flex-row">
+          <p>© 2026 Castor AI. All rights reserved.</p>
+          <nav className="flex gap-5" aria-label="Legal">
+            <Link className="hover:text-[var(--ink)]" href="/privacy">Privacy</Link>
+            <Link className="hover:text-[var(--ink)]" href="/terms">Terms</Link>
+          </nav>
+        </div>
       </footer>
     </div>
   )
