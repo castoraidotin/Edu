@@ -150,7 +150,7 @@ export default function PrivacyPage() {
               </p>
               <p>
                 For privacy questions or requests, email{' '}
-                <a href="mailto:castorai.admin@gmail.com">castorai.admin@gmail.com</a>.
+                <a href="mailto:support@castorai.in">support@castorai.in</a>.
               </p>
             </>
           ),

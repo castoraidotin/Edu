@@ -17,9 +17,9 @@ describe('Public legal pages', () => {
 
     expect(screen.getByRole('heading', { name: 'Privacy Policy', level: 1 })).toBeInTheDocument()
     expect(screen.getByText(/Assessment information:/)).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'castorai.admin@gmail.com' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'support@castorai.in' })).toHaveAttribute(
       'href',
-      'mailto:castorai.admin@gmail.com'
+      'mailto:support@castorai.in'
     )
   })
 

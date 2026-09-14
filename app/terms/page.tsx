@@ -117,7 +117,7 @@ export default function TermsPage() {
           content: (
             <p>
               Questions about these terms may be sent to{' '}
-              <a href="mailto:castorai.admin@gmail.com">castorai.admin@gmail.com</a>.
+              <a href="mailto:support@castorai.in">support@castorai.in</a>.
             </p>
           ),
         },
