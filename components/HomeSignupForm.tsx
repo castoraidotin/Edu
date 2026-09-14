@@ -50,7 +50,10 @@ export default function HomeSignupForm() {
     trackEvent('signup_started', { method: 'google', location: 'landing' })
     setError('')
     try {
-      await signIn('google', { callbackUrl: '/profile/complete' })
+      // Let the dashboard's server-side product-access check decide whether
+      // this Google user still needs onboarding. Sending every Google sign-in
+      // directly to profile completion makes returning users repeat the form.
+      await signIn('google', { callbackUrl: '/dashboard' })
     } catch {
       setError('Could not open Google sign-in. Please try again.')
     }

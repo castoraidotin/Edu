@@ -133,7 +133,7 @@ function StatsContent() {
   const cohortLabel = [
     designation === 'all' ? 'All backgrounds' : designation,
     experience === 'all' ? 'all experience levels' : experience,
-  ].join(' Â· ')
+  ].join(' · ')
 
   return (
     <DashboardShell activePath="/stats" title="Insights">
@@ -147,7 +147,7 @@ function StatsContent() {
               <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Community insights</h1>
             </div>
             <p className="hidden">
-              {DOMAIN_LABELS[domain]} <span aria-hidden="true">Â·</span> {cohortLabel}
+              {DOMAIN_LABELS[domain]} <span aria-hidden="true">·</span> {cohortLabel}
             </p>
             <p className="mt-1.5 flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
               <span className="truncate">{DOMAIN_LABELS[domain]}</span>
@@ -218,7 +218,7 @@ function StatsContent() {
           </Sheet>
         </div>
 
-        {/* Tabs â€” scrolls horizontally on narrow screens instead of overflowing
+        {/* Tabs — scrolls horizontally on narrow screens instead of overflowing
             the page, since the three labels don't fit ~340px-and-under widths.
             The right-edge mask fades the last tab into transparency instead of
             clipping it mid-word, so it reads as "swipe for more" rather than

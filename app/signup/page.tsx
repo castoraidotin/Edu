@@ -64,7 +64,10 @@ export default function SignupPage() {
     trackEvent('signup_started', { method: 'google', location: 'signup_page' })
     setError('')
     try {
-      await signIn('google', { callbackUrl: '/profile/complete' })
+      // The dashboard checks the persisted profile and redirects only new or
+      // incomplete Google users to onboarding. Returning users should not be
+      // forced through profile completion on every sign-in.
+      await signIn('google', { callbackUrl: '/dashboard' })
     } catch {
       setError('Could not open Google sign-in. Please try again.')
     }
