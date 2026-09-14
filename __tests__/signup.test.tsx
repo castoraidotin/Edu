@@ -68,7 +68,7 @@ describe('SignupPage', () => {
     mockSignIn.mockResolvedValueOnce({})
     render(<SignupPage />)
     fireEvent.click(screen.getByRole('button', { name: /continue with google/i }))
-    expect(mockSignIn).toHaveBeenCalledWith('google', { callbackUrl: '/profile/complete' })
+    expect(mockSignIn).toHaveBeenCalledWith('google', { callbackUrl: '/dashboard' })
   })
 
   it('shows error message returned from API', async () => {
