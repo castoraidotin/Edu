@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Sans, JetBrains_Mono } from "next/font/google";
+import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { Providers } from "./providers";
+
+const GOOGLE_TAG_ID = "GTM-PWLBX52Q";
 
 // Display + body face: humanist, enterprise-grade grotesk — carries the
 // "precision instrument" identity used across every page but the landing page.
@@ -42,6 +45,19 @@ export default function RootLayout({
       lang="en"
       className={`${plexSans.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
+      <head>
+        <Script
+          src={`https://www.googletagmanager.com/gtm.js?id=${GOOGLE_TAG_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script id="google-tag" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+          `}
+        </Script>
+      </head>
       <body className="min-h-full flex flex-col">
           <Providers>{children}</Providers>
           <Analytics />
